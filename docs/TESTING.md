@@ -29,6 +29,8 @@ The implementation revision was verified with:
 - Prisma schema validation and client generation: passed.
 - Next.js production build: passed; all localized, protected and API routes compiled.
 - Production dependency audit: 0 known vulnerabilities. A patched `deepmerge-ts` override is pinned because the current Prisma release otherwise resolves an advisory-affected transitive version.
+- Manual browser check: Arabic RTL and English LTR homepages rendered correctly on desktop and at 390px; mobile navigation, skip link, keyboard order and focus indicators passed.
+- Direct route check: `/ar|en/architect`, `/ar|en/optimizer`, `/ar|en/lab`, and `/icon.svg` each returned HTTP 200. The root returned the expected 307 locale redirect.
 
 MySQL, SMTP, AI-provider and payment-gateway integration tests were not represented as passed without those services. They remain explicit staging checks below.
 
