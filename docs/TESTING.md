@@ -19,6 +19,19 @@ npm test
 npm run build
 ```
 
+## Local verification result
+
+The implementation revision was verified with:
+
+- ESLint: passed with no warnings or errors.
+- TypeScript strict check: passed.
+- Vitest: 2 files, 8 tests passed.
+- Prisma schema validation and client generation: passed.
+- Next.js production build: passed; all localized, protected and API routes compiled.
+- Production dependency audit: 0 known vulnerabilities. A patched `deepmerge-ts` override is pinned because the current Prisma release otherwise resolves an advisory-affected transitive version.
+
+MySQL, SMTP, AI-provider and payment-gateway integration tests were not represented as passed without those services. They remain explicit staging checks below.
+
 ## Required staging QA
 
 These integration scenarios require configured MySQL, SMTP, AI and payment credentials and must be completed in staging:

@@ -48,7 +48,7 @@ export function ArchitectWorkspace({
 
   useEffect(() => {
     const draft = window.localStorage.getItem(storageKey);
-    if (draft) setIdea(draft);
+    if (draft) queueMicrotask(() => setIdea(draft));
   }, [storageKey]);
 
   useEffect(() => {

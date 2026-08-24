@@ -244,7 +244,7 @@ export default async function HomePage({
                   </div>
                 </div>
                 <div className="rounded-full border border-[#d8b66f]/25 bg-[#d8b66f]/8 px-3 py-1 text-xs text-[#e1c382]">
-                  91 / 100
+                  {ar ? "مثال توضيحي" : "Illustrative"} · 91 / 100
                 </div>
               </div>
               <div className="relative mt-6 grid gap-4 text-sm">

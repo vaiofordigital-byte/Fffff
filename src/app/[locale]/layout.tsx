@@ -65,7 +65,7 @@ export default async function LocaleLayout({
   const locale = rawLocale;
 
   return (
-    <html lang={locale} dir={direction(locale)}>
+    <html lang={locale} dir={direction(locale)} data-scroll-behavior="smooth">
       <body className="pb-16 md:pb-0">
         <a
           href="#main-content"

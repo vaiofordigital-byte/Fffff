@@ -1,4 +1,4 @@
-import { Algorithm, hash, verify } from "@node-rs/argon2";
+import { hash, verify } from "@node-rs/argon2";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { UserRole } from "@/generated/prisma/client";
@@ -7,7 +7,6 @@ import { env } from "@/lib/env";
 import { randomToken, requestFingerprint, securityHash } from "@/lib/security";
 
 const passwordOptions = {
-  algorithm: Algorithm.Argon2id,
   memoryCost: 19_456,
   timeCost: 2,
   outputLen: 32,
@@ -79,6 +78,7 @@ export async function getCurrentUser() {
           status: true,
           preferredLocale: true,
           emailVerifiedAt: true,
+          mfaEnabled: true,
           profile: {
             select: {
               displayName: true,

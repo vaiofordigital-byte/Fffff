@@ -30,6 +30,9 @@ export default async function AdminDashboardPage({
   const locale: Locale = isLocale(raw) ? raw : "ar";
   const ar = locale === "ar";
   const user = await requireRole("ADMINISTRATOR", locale);
+  // This is a request-time server query boundary, not a client render value.
+  // eslint-disable-next-line react-hooks/purity
+  const failureWindowStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const [
     productCount,
     userCount,
@@ -48,7 +51,7 @@ export default async function AdminDashboardPage({
     }),
     db.subscription.count({ where: { status: "ACTIVE" } }),
     db.generatedPrompt.count({
-      where: { status: "FAILED", createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+      where: { status: "FAILED", createdAt: { gte: failureWindowStart } },
     }),
     db.order.findMany({
       orderBy: { createdAt: "desc" },

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -31,6 +32,7 @@ export default async function DashboardPage({
   const locale: Locale = isLocale(raw) ? raw : "ar";
   const ar = locale === "ar";
   const user = await requireUser(locale);
+  if (!user.profile?.onboardingDone) redirect(`/${locale}/onboarding`);
   const [entitlements, projects, favorites, generations, subscription, notifications] =
     await Promise.all([
       db.entitlement.count({

@@ -46,7 +46,7 @@ export async function POST(
         workflowId,
         userId: user.id,
         projectId: input.projectId,
-        context: input.context,
+        context: JSON.parse(JSON.stringify(input.context)),
         idempotencyKey,
         status: "PENDING",
         steps: {

@@ -8,6 +8,5 @@ coverage/
 .env.*.local
 !.env.example
 src/generated/
-prisma/migrations/**/migration_lock.toml
 .DS_Store
 *.tsbuildinfo

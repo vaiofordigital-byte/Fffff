@@ -115,8 +115,9 @@ export async function executeGeneration(input: ExecuteGenerationInput) {
     }
 
     if (!result) throw lastError ?? new Error("No AI provider returned a result");
+    const completedResult = result;
 
-    const qualityScore = scorePrompt(result.content).total;
+    const qualityScore = scorePrompt(completedResult.content).total;
 
     const balance = await db.$transaction(async (tx) => {
       const updated = await tx.creditAccount.updateMany({
@@ -150,9 +151,9 @@ export async function executeGeneration(input: ExecuteGenerationInput) {
         where: { id: generation.id },
         data: {
           status: "COMPLETED",
-          content: input.privateMode ? null : result.content,
-          provider: result.provider,
-          model: result.model,
+          content: input.privateMode ? null : completedResult.content,
+          provider: completedResult.provider,
+          model: completedResult.model,
           qualityScore,
         },
       });
@@ -162,10 +163,10 @@ export async function executeGeneration(input: ExecuteGenerationInput) {
 
     return {
       id: generation.id,
-      content: result.content,
+      content: completedResult.content,
       qualityScore,
-      provider: result.provider,
-      model: result.model,
+      provider: completedResult.provider,
+      model: completedResult.model,
       creditBalance: balance,
       replayed: false,
     };

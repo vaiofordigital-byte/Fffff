@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowDown, Coins, Workflow } from "lucide-react";
 import { StartWorkflowButton } from "@/components/workflows/start-workflow-button";

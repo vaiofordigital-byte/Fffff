@@ -39,12 +39,14 @@ export function LabWorkspace({ locale }: { locale: "ar" | "en" }) {
     const saved = localStorage.getItem(`promptx:lab:${locale}`);
     if (!saved) return;
     const draft = JSON.parse(saved) as { title?: string; content?: string; versions?: Snapshot[] };
-    setTitle(draft.title ?? title);
-    setContent(draft.content ?? "");
-    setVersions(draft.versions ?? []);
-  // Initial recovery should run once for the selected locale.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locale]);
+    queueMicrotask(() => {
+      const recoveredContent = draft.content ?? "";
+      setTitle(draft.title ?? (ar ? "برومبت جديد" : "Untitled prompt"));
+      setContent(recoveredContent);
+      valueRef.current = recoveredContent;
+      setVersions(draft.versions ?? []);
+    });
+  }, [ar, locale]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
