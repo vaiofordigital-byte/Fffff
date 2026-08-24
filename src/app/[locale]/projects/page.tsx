@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, FolderKanban } from "lucide-react";
 import { ProjectCreator } from "@/components/projects/project-creator";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isLocale, type Locale } from "@/lib/i18n";
+import { getOrganizationMembership } from "@/lib/organizations";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -21,12 +23,14 @@ export default async function ProjectsPage({
   const locale: Locale = isLocale(raw) ? raw : "ar";
   const ar = locale === "ar";
   const user = await requireUser(locale);
+  const membership = await getOrganizationMembership(user.id);
+  if (!membership) redirect(`/${locale}/onboarding`);
   const projects = await db.project.findMany({
-    where: { userId: user.id, archived: false },
+    where: { organizationId: membership.organizationId, archived: false },
     orderBy: { updatedAt: "desc" },
     include: {
       _count: {
-        select: { contexts: true, generatedPrompts: true, workflowRuns: true },
+        select: { contexts: true, businessTasks: true, workflowRuns: true },
       },
     },
   });
@@ -42,11 +46,14 @@ export default async function ProjectsPage({
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">
             {ar
-              ? "اجمع البرومبتات والسياق والمخرجات وسير العمل لكل هدف أو عميل."
-              : "Bring prompts, context, outputs and workflows together for every goal or client."}
+              ? "اجمع الأهداف والمستندات والموظفين والمهام والنتائج لكل مبادرة."
+              : "Bring goals, documents, employees, tasks and results together for every initiative."}
           </p>
         </div>
-        <ProjectCreator locale={locale} />
+        <ProjectCreator
+          locale={locale}
+          organizationId={membership.organizationId}
+        />
       </header>
 
       {projects.length ? (
@@ -68,7 +75,7 @@ export default async function ProjectsPage({
                 {project.description || (ar ? "مساحة مشروع خاصة" : "Private project workspace")}
               </p>
               <div className="mt-5 flex flex-wrap gap-2 text-[0.68rem] text-muted">
-                <span>{project._count.generatedPrompts} {ar ? "برومبت" : "prompts"}</span>
+                <span>{project._count.businessTasks} {ar ? "مهام" : "tasks"}</span>
                 <span>·</span>
                 <span>{project._count.contexts} {ar ? "سياق" : "contexts"}</span>
                 <span>·</span>

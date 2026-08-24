@@ -142,6 +142,189 @@ export async function createCheckout(input: {
   }
 }
 
+async function processSubscriptionEvent(
+  provider: string,
+  event: VerifiedPaymentEvent,
+  rawBody: string,
+) {
+  const checkout = await db.subscriptionCheckout.findFirst({
+    where: {
+      provider,
+      OR: [
+        { providerCheckoutId: event.providerPaymentId },
+        ...(event.providerSubscriptionId
+          ? [{ providerSubscriptionId: event.providerSubscriptionId }]
+          : []),
+      ],
+    },
+    include: { plan: true },
+  });
+  if (!checkout) throw new AppError("PAYMENT_NOT_FOUND", 404);
+  if (
+    event.amount !== undefined &&
+    ["payment.paid", "subscription.renewed"].includes(event.type) &&
+    Math.abs(event.amount - Number(checkout.amount)) > 0.001
+  ) {
+    throw new AppError("PAYMENT_AMOUNT_MISMATCH", 422);
+  }
+  if (event.currency && event.currency !== checkout.currency) {
+    throw new AppError("PAYMENT_CURRENCY_MISMATCH", 422);
+  }
+  const providerSubscriptionId =
+    event.providerSubscriptionId ?? checkout.providerSubscriptionId;
+  if (
+    ["payment.paid", "subscription.renewed"].includes(event.type) &&
+    !providerSubscriptionId
+  ) {
+    throw new AppError("SUBSCRIPTION_PROVIDER_REFERENCE_MISSING", 422);
+  }
+  const now = new Date();
+  const periodEnd = new Date(now);
+  if (checkout.interval === "MONTHLY") {
+    periodEnd.setUTCMonth(periodEnd.getUTCMonth() + 1);
+  } else {
+    periodEnd.setUTCFullYear(periodEnd.getUTCFullYear() + 1);
+  }
+
+  await db.$transaction(async (tx) => {
+    await tx.paymentEvent.upsert({
+      where: {
+        provider_providerEventId: {
+          provider,
+          providerEventId: event.id,
+        },
+      },
+      create: {
+        provider,
+        providerEventId: event.id,
+        type: event.type,
+        payloadHash: sha256(rawBody),
+      },
+      update: {},
+    });
+
+    if (event.type === "payment.paid" || event.type === "subscription.renewed") {
+      await tx.subscriptionCheckout.update({
+        where: { id: checkout.id },
+        data: {
+          status: "PAID",
+          providerSubscriptionId,
+          currentPeriodStart: now,
+          currentPeriodEnd: periodEnd,
+        },
+      });
+      const existingSubscription = await tx.subscription.findFirst({
+        where: {
+          organizationId: checkout.organizationId,
+          status: { in: ["ACTIVE", "TRIALING", "PAST_DUE", "PAUSED"] },
+        },
+      });
+      if (existingSubscription) {
+        await tx.subscription.update({
+          where: { id: existingSubscription.id },
+          data: {
+            planId: checkout.planId,
+            provider,
+            providerSubscriptionId,
+            interval: checkout.interval,
+            status: "ACTIVE",
+            currentPeriodStart: now,
+            currentPeriodEnd: periodEnd,
+            cancelAtPeriodEnd: false,
+            cancelledAt: null,
+          },
+        });
+      } else {
+        await tx.subscription.create({
+          data: {
+            userId: checkout.userId,
+            organizationId: checkout.organizationId,
+            planId: checkout.planId,
+            provider,
+            providerSubscriptionId,
+            interval: checkout.interval,
+            status: "ACTIVE",
+            currentPeriodStart: now,
+            currentPeriodEnd: periodEnd,
+          },
+        });
+      }
+
+      const creditIdempotency = `subscription:${event.id}:credits`;
+      const priorAllocation = await tx.creditTransaction.findUnique({
+        where: { idempotencyKey: creditIdempotency },
+      });
+      if (!priorAllocation && checkout.plan.monthlyCredits > 0) {
+        const account = await tx.creditAccount.update({
+          where: { userId: checkout.userId },
+          data: {
+            balance: { increment: checkout.plan.monthlyCredits },
+            lifetimeIn: { increment: checkout.plan.monthlyCredits },
+          },
+        });
+        await tx.creditTransaction.create({
+          data: {
+            accountId: account.id,
+            type: "SUBSCRIPTION_ALLOCATION",
+            amount: checkout.plan.monthlyCredits,
+            balanceAfter: account.balance,
+            reason: "Subscription credit allocation",
+            relatedType: "SubscriptionCheckout",
+            relatedId: checkout.id,
+            idempotencyKey: creditIdempotency,
+          },
+        });
+      }
+      await tx.notification.create({
+        data: {
+          userId: checkout.userId,
+          type: "SUBSCRIPTION",
+          titleAr: "تم تفعيل اشتراك EVELIA",
+          titleEn: "EVELIA subscription activated",
+          bodyAr: `خطة ${checkout.plan.nameAr} نشطة حتى ${periodEnd.toISOString().slice(0, 10)}.`,
+          bodyEn: `${checkout.plan.nameEn} is active until ${periodEnd.toISOString().slice(0, 10)}.`,
+          actionUrl: "/billing",
+        },
+      });
+    } else if (event.type === "payment.failed") {
+      await tx.subscriptionCheckout.update({
+        where: { id: checkout.id },
+        data: { status: "FAILED" },
+      });
+    } else {
+      await tx.subscriptionCheckout.update({
+        where: { id: checkout.id },
+        data: {
+          status: event.type === "payment.refunded" ? "REFUNDED" : checkout.status,
+        },
+      });
+      await tx.subscription.updateMany({
+        where: {
+          organizationId: checkout.organizationId,
+          providerSubscriptionId,
+        },
+        data: {
+          status: "CANCELLED",
+          cancelAtPeriodEnd: true,
+          cancelledAt: now,
+        },
+      });
+    }
+
+    await tx.paymentEvent.update({
+      where: {
+        provider_providerEventId: {
+          provider,
+          providerEventId: event.id,
+        },
+      },
+      data: { processedAt: now },
+    });
+  });
+
+  return { processed: true, replayed: false, subscription: true };
+}
+
 export async function processPaymentEvent(
   provider: string,
   rawBody: string,
@@ -192,7 +375,7 @@ export async function processPaymentEvent(
       },
     },
   });
-  if (!payment) throw new AppError("PAYMENT_NOT_FOUND", 404);
+  if (!payment) return processSubscriptionEvent(provider, event, rawBody);
 
   if (
     event.amount !== undefined &&

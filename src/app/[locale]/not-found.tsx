@@ -12,7 +12,7 @@ export default function NotFound() {
           الصفحة غير موجودة أو لم تعد منشورة.
         </p>
         <Button asChild variant="outline" className="mt-6">
-          <Link href="/ar">PROMPTX</Link>
+          <Link href="/ar">EVELIA</Link>
         </Button>
       </div>
     </div>

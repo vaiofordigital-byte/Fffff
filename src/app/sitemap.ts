@@ -5,8 +5,8 @@ import { publicEnv } from "@/lib/env";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [products, posts, pages] = await Promise.all([
-    db.product.findMany({
+  const [workflows, posts, pages] = await Promise.all([
+    db.workflow.findMany({
       where: { status: "PUBLISHED" },
       select: { slug: true, updatedAt: true },
     }),
@@ -20,7 +20,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   ]);
   const locales = ["ar", "en"] as const;
-  const staticPaths = ["", "/marketplace", "/architect", "/optimizer", "/workflows", "/pricing", "/blog"];
+  const staticPaths = [
+    "",
+    "/employees",
+    "/industries",
+    "/workflows",
+    "/pricing",
+    "/blog",
+    "/about",
+    "/privacy",
+  ];
 
   return [
     ...locales.flatMap((locale) =>
@@ -32,9 +41,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })),
     ),
     ...locales.flatMap((locale) =>
-      products.map((product) => ({
-        url: `${publicEnv.appUrl}/${locale}/marketplace/${product.slug}`,
-        lastModified: product.updatedAt,
+      workflows.map((workflow) => ({
+        url: `${publicEnv.appUrl}/${locale}/workflows/${workflow.slug}`,
+        lastModified: workflow.updatedAt,
         changeFrequency: "weekly" as const,
         priority: 0.8,
       })),

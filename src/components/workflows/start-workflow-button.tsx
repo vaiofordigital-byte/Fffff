@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 export function StartWorkflowButton({
   workflowId,
   locale,
+  organizationId,
 }: {
   workflowId: string;
   locale: "ar" | "en";
+  organizationId?: string;
 }) {
   const ar = locale === "ar";
   const [loading, setLoading] = useState(false);
@@ -18,6 +20,10 @@ export function StartWorkflowButton({
   const router = useRouter();
 
   async function start() {
+    if (!organizationId) {
+      router.push(`/${locale}/login?next=/${locale}/workflows`);
+      return;
+    }
     setLoading(true);
     setError("");
     const response = await fetch(`/api/workflows/${workflowId}/runs`, {
@@ -26,7 +32,7 @@ export function StartWorkflowButton({
         "Content-Type": "application/json",
         "Idempotency-Key": crypto.randomUUID(),
       },
-      body: JSON.stringify({ context: {} }),
+      body: JSON.stringify({ organizationId, context: {} }),
     });
     const payload = (await response.json()) as {
       id?: string;

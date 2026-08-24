@@ -39,6 +39,134 @@ CREATE TABLE `Profile` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `Organization` (
+    `id` VARCHAR(191) NOT NULL,
+    `slug` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(191) NOT NULL,
+    `businessType` VARCHAR(120) NULL,
+    `industry` VARCHAR(120) NULL,
+    `country` VARCHAR(2) NULL,
+    `goals` JSON NULL,
+    `settings` JSON NULL,
+    `status` ENUM('ACTIVE', 'SUSPENDED', 'CLOSED') NOT NULL DEFAULT 'ACTIVE',
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deletedAt` DATETIME(3) NULL,
+
+    UNIQUE INDEX `Organization_slug_key`(`slug`),
+    INDEX `Organization_status_createdAt_idx`(`status`, `createdAt`),
+    INDEX `Organization_industry_status_idx`(`industry`, `status`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `OrganizationMember` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `role` ENUM('OWNER', 'MANAGER', 'EMPLOYEE', 'VIEWER') NOT NULL,
+    `permissions` JSON NULL,
+    `active` BOOLEAN NOT NULL DEFAULT true,
+    `joinedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `OrganizationMember_userId_active_idx`(`userId`, `active`),
+    INDEX `OrganizationMember_organizationId_role_active_idx`(`organizationId`, `role`, `active`),
+    UNIQUE INDEX `OrganizationMember_organizationId_userId_key`(`organizationId`, `userId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `AiEmployee` (
+    `id` VARCHAR(191) NOT NULL,
+    `slug` VARCHAR(191) NOT NULL,
+    `type` ENUM('MARKETING_MANAGER', 'CUSTOMER_SERVICE_MANAGER', 'SALES_ASSISTANT', 'CONTENT_CREATOR', 'ECOMMERCE_MANAGER', 'BUSINESS_ANALYST', 'INDUSTRY_SPECIALIST') NOT NULL,
+    `nameAr` VARCHAR(191) NOT NULL,
+    `nameEn` VARCHAR(191) NOT NULL,
+    `purposeAr` VARCHAR(500) NOT NULL,
+    `purposeEn` VARCHAR(500) NOT NULL,
+    `descriptionAr` TEXT NOT NULL,
+    `descriptionEn` TEXT NOT NULL,
+    `capabilities` JSON NOT NULL,
+    `actions` JSON NOT NULL,
+    `requiredKnowledge` JSON NOT NULL,
+    `systemInstructions` LONGTEXT NOT NULL,
+    `defaultCreditCost` INTEGER NOT NULL DEFAULT 1,
+    `active` BOOLEAN NOT NULL DEFAULT true,
+    `sortOrder` INTEGER NOT NULL DEFAULT 0,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `AiEmployee_slug_key`(`slug`),
+    INDEX `AiEmployee_active_sortOrder_idx`(`active`, `sortOrder`),
+    INDEX `AiEmployee_type_active_idx`(`type`, `active`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `OrganizationAiEmployee` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `aiEmployeeId` VARCHAR(191) NOT NULL,
+    `activatedById` VARCHAR(191) NOT NULL,
+    `status` ENUM('ACTIVE', 'PAUSED', 'DISABLED') NOT NULL DEFAULT 'ACTIVE',
+    `configuration` JSON NULL,
+    `usageLimit` INTEGER NULL,
+    `usageCount` INTEGER NOT NULL DEFAULT 0,
+    `activatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `OrganizationAiEmployee_organizationId_status_idx`(`organizationId`, `status`),
+    UNIQUE INDEX `OrganizationAiEmployee_organizationId_aiEmployeeId_key`(`organizationId`, `aiEmployeeId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `KnowledgeDocument` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `uploadedById` VARCHAR(191) NOT NULL,
+    `filename` VARCHAR(255) NOT NULL,
+    `mimeType` VARCHAR(120) NOT NULL,
+    `sizeBytes` INTEGER NOT NULL,
+    `checksum` CHAR(64) NOT NULL,
+    `source` ENUM('MANUAL', 'PDF', 'TEXT', 'DOCUMENT') NOT NULL,
+    `status` ENUM('PENDING', 'PROCESSING', 'READY', 'FAILED') NOT NULL DEFAULT 'PENDING',
+    `extractedText` LONGTEXT NULL,
+    `failureCode` VARCHAR(120) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `KnowledgeDocument_organizationId_status_createdAt_idx`(`organizationId`, `status`, `createdAt`),
+    UNIQUE INDEX `KnowledgeDocument_organizationId_checksum_key`(`organizationId`, `checksum`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `KnowledgeEntry` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `documentId` VARCHAR(191) NULL,
+    `createdById` VARCHAR(191) NOT NULL,
+    `kind` ENUM('COMPANY_PROFILE', 'PRODUCT', 'SERVICE', 'POLICY', 'CUSTOMER', 'FAQ', 'BRAND_VOICE', 'PROCEDURE', 'DOCUMENT') NOT NULL,
+    `source` ENUM('MANUAL', 'PDF', 'TEXT', 'DOCUMENT') NOT NULL,
+    `titleAr` VARCHAR(191) NOT NULL,
+    `titleEn` VARCHAR(191) NOT NULL,
+    `content` LONGTEXT NOT NULL,
+    `approved` BOOLEAN NOT NULL DEFAULT true,
+    `privateMode` BOOLEAN NOT NULL DEFAULT false,
+    `vectorReference` VARCHAR(500) NULL,
+    `embeddingMetadata` JSON NULL,
+    `metadata` JSON NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `KnowledgeEntry_organizationId_kind_approved_idx`(`organizationId`, `kind`, `approved`),
+    INDEX `KnowledgeEntry_documentId_idx`(`documentId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `Session` (
     `id` VARCHAR(191) NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
@@ -269,6 +397,7 @@ CREATE TABLE `Plan` (
 CREATE TABLE `Subscription` (
     `id` VARCHAR(191) NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NULL,
     `planId` VARCHAR(191) NOT NULL,
     `provider` VARCHAR(80) NULL,
     `providerSubscriptionId` VARCHAR(191) NULL,
@@ -283,7 +412,35 @@ CREATE TABLE `Subscription` (
 
     UNIQUE INDEX `Subscription_providerSubscriptionId_key`(`providerSubscriptionId`),
     INDEX `Subscription_userId_status_idx`(`userId`, `status`),
+    INDEX `Subscription_organizationId_status_idx`(`organizationId`, `status`),
     INDEX `Subscription_status_currentPeriodEnd_idx`(`status`, `currentPeriodEnd`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `SubscriptionCheckout` (
+    `id` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `planId` VARCHAR(191) NOT NULL,
+    `interval` ENUM('MONTHLY', 'YEARLY') NOT NULL,
+    `provider` VARCHAR(80) NOT NULL,
+    `providerCheckoutId` VARCHAR(191) NULL,
+    `providerSubscriptionId` VARCHAR(191) NULL,
+    `checkoutUrl` VARCHAR(500) NULL,
+    `idempotencyKey` VARCHAR(191) NOT NULL,
+    `status` ENUM('PENDING', 'AUTHORIZED', 'PAID', 'FAILED', 'REFUNDED', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
+    `amount` DECIMAL(12, 2) NOT NULL,
+    `currency` CHAR(3) NOT NULL,
+    `currentPeriodStart` DATETIME(3) NULL,
+    `currentPeriodEnd` DATETIME(3) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `SubscriptionCheckout_providerCheckoutId_key`(`providerCheckoutId`),
+    UNIQUE INDEX `SubscriptionCheckout_idempotencyKey_key`(`idempotencyKey`),
+    INDEX `SubscriptionCheckout_organizationId_status_createdAt_idx`(`organizationId`, `status`, `createdAt`),
+    INDEX `SubscriptionCheckout_planId_status_idx`(`planId`, `status`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -432,14 +589,18 @@ CREATE TABLE `CreditTransaction` (
 CREATE TABLE `Project` (
     `id` VARCHAR(191) NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NULL,
     `name` VARCHAR(191) NOT NULL,
     `description` TEXT NULL,
+    `goals` JSON NULL,
+    `status` ENUM('PLANNING', 'ACTIVE', 'COMPLETED', 'ARCHIVED') NOT NULL DEFAULT 'PLANNING',
     `color` VARCHAR(20) NULL,
     `archived` BOOLEAN NOT NULL DEFAULT false,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     INDEX `Project_userId_archived_updatedAt_idx`(`userId`, `archived`, `updatedAt`),
+    INDEX `Project_organizationId_archived_updatedAt_idx`(`organizationId`, `archived`, `updatedAt`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -447,6 +608,7 @@ CREATE TABLE `Project` (
 CREATE TABLE `Context` (
     `id` VARCHAR(191) NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NULL,
     `projectId` VARCHAR(191) NULL,
     `name` VARCHAR(191) NOT NULL,
     `description` TEXT NULL,
@@ -457,6 +619,7 @@ CREATE TABLE `Context` (
     `updatedAt` DATETIME(3) NOT NULL,
 
     INDEX `Context_userId_updatedAt_idx`(`userId`, `updatedAt`),
+    INDEX `Context_organizationId_updatedAt_idx`(`organizationId`, `updatedAt`),
     INDEX `Context_projectId_idx`(`projectId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -487,6 +650,155 @@ CREATE TABLE `GeneratedPrompt` (
     INDEX `GeneratedPrompt_userId_status_createdAt_idx`(`userId`, `status`, `createdAt`),
     INDEX `GeneratedPrompt_projectId_updatedAt_idx`(`projectId`, `updatedAt`),
     PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `BusinessTask` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `createdById` VARCHAR(191) NOT NULL,
+    `aiEmployeeId` VARCHAR(191) NOT NULL,
+    `organizationAiEmployeeId` VARCHAR(191) NULL,
+    `projectId` VARCHAR(191) NULL,
+    `generatedPromptId` VARCHAR(191) NULL,
+    `parentTaskId` VARCHAR(191) NULL,
+    `title` VARCHAR(191) NOT NULL,
+    `instruction` LONGTEXT NOT NULL,
+    `input` JSON NULL,
+    `contextSnapshot` JSON NULL,
+    `result` LONGTEXT NULL,
+    `status` ENUM('DRAFT', 'QUEUED', 'RUNNING', 'COMPLETED', 'FAILED', 'MODERATED') NOT NULL DEFAULT 'QUEUED',
+    `creditCost` INTEGER NOT NULL DEFAULT 0,
+    `provider` VARCHAR(80) NULL,
+    `model` VARCHAR(120) NULL,
+    `privateMode` BOOLEAN NOT NULL DEFAULT false,
+    `idempotencyKey` VARCHAR(191) NOT NULL,
+    `errorCode` VARCHAR(120) NULL,
+    `startedAt` DATETIME(3) NULL,
+    `completedAt` DATETIME(3) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `BusinessTask_generatedPromptId_key`(`generatedPromptId`),
+    UNIQUE INDEX `BusinessTask_idempotencyKey_key`(`idempotencyKey`),
+    INDEX `BusinessTask_organizationId_status_createdAt_idx`(`organizationId`, `status`, `createdAt`),
+    INDEX `BusinessTask_createdById_createdAt_idx`(`createdById`, `createdAt`),
+    INDEX `BusinessTask_aiEmployeeId_status_idx`(`aiEmployeeId`, `status`),
+    INDEX `BusinessTask_projectId_updatedAt_idx`(`projectId`, `updatedAt`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `AiUsageEvent` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `aiEmployeeId` VARCHAR(191) NULL,
+    `businessTaskId` VARCHAR(191) NULL,
+    `requestType` VARCHAR(80) NOT NULL,
+    `provider` VARCHAR(80) NULL,
+    `model` VARCHAR(120) NULL,
+    `inputUnits` INTEGER NULL,
+    `outputUnits` INTEGER NULL,
+    `creditAmount` INTEGER NOT NULL DEFAULT 0,
+    `estimatedCost` DECIMAL(12, 6) NULL,
+    `status` VARCHAR(40) NOT NULL,
+    `idempotencyKey` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `AiUsageEvent_idempotencyKey_key`(`idempotencyKey`),
+    INDEX `AiUsageEvent_organizationId_createdAt_idx`(`organizationId`, `createdAt`),
+    INDEX `AiUsageEvent_aiEmployeeId_createdAt_idx`(`aiEmployeeId`, `createdAt`),
+    INDEX `AiUsageEvent_status_createdAt_idx`(`status`, `createdAt`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `BusinessRecommendation` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `type` VARCHAR(80) NOT NULL,
+    `titleAr` VARCHAR(191) NOT NULL,
+    `titleEn` VARCHAR(191) NOT NULL,
+    `bodyAr` TEXT NOT NULL,
+    `bodyEn` TEXT NOT NULL,
+    `evidence` JSON NOT NULL,
+    `priority` INTEGER NOT NULL DEFAULT 50,
+    `status` ENUM('NEW', 'DISMISSED', 'ACTED') NOT NULL DEFAULT 'NEW',
+    `basedOnAt` DATETIME(3) NOT NULL,
+    `actedAt` DATETIME(3) NULL,
+    `dismissedAt` DATETIME(3) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `BusinessRecommendation_organizationId_status_priority_idx`(`organizationId`, `status`, `priority`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `BusinessScoreSnapshot` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `score` INTEGER NOT NULL,
+    `dimensions` JSON NOT NULL,
+    `strengths` JSON NOT NULL,
+    `weaknesses` JSON NOT NULL,
+    `suggestions` JSON NOT NULL,
+    `disclaimerAr` VARCHAR(500) NOT NULL,
+    `disclaimerEn` VARCHAR(500) NOT NULL,
+    `computedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `BusinessScoreSnapshot_organizationId_computedAt_idx`(`organizationId`, `computedAt`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `BusinessReport` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `type` ENUM('WEEKLY', 'BUSINESS', 'MARKETING', 'CUSTOMER_SERVICE') NOT NULL,
+    `status` ENUM('GENERATING', 'READY', 'FAILED') NOT NULL DEFAULT 'GENERATING',
+    `titleAr` VARCHAR(191) NOT NULL,
+    `titleEn` VARCHAR(191) NOT NULL,
+    `periodStart` DATETIME(3) NOT NULL,
+    `periodEnd` DATETIME(3) NOT NULL,
+    `content` JSON NULL,
+    `generatedAt` DATETIME(3) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `BusinessReport_organizationId_type_periodEnd_idx`(`organizationId`, `type`, `periodEnd`),
+    INDEX `BusinessReport_status_createdAt_idx`(`status`, `createdAt`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `IndustryPackage` (
+    `id` VARCHAR(191) NOT NULL,
+    `slug` VARCHAR(191) NOT NULL,
+    `industry` VARCHAR(120) NOT NULL,
+    `nameAr` VARCHAR(191) NOT NULL,
+    `nameEn` VARCHAR(191) NOT NULL,
+    `descriptionAr` TEXT NOT NULL,
+    `descriptionEn` TEXT NOT NULL,
+    `active` BOOLEAN NOT NULL DEFAULT true,
+    `sortOrder` INTEGER NOT NULL DEFAULT 0,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `IndustryPackage_slug_key`(`slug`),
+    INDEX `IndustryPackage_industry_active_sortOrder_idx`(`industry`, `active`, `sortOrder`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `IndustryPackageEmployee` (
+    `packageId` VARCHAR(191) NOT NULL,
+    `aiEmployeeId` VARCHAR(191) NOT NULL,
+    `sortOrder` INTEGER NOT NULL DEFAULT 0,
+
+    INDEX `IndustryPackageEmployee_aiEmployeeId_idx`(`aiEmployeeId`),
+    PRIMARY KEY (`packageId`, `aiEmployeeId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -587,6 +899,7 @@ CREATE TABLE `WorkflowRun` (
     `id` VARCHAR(191) NOT NULL,
     `workflowId` VARCHAR(191) NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NULL,
     `projectId` VARCHAR(191) NULL,
     `status` ENUM('PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
     `currentStep` INTEGER NOT NULL DEFAULT 0,
@@ -599,6 +912,7 @@ CREATE TABLE `WorkflowRun` (
 
     UNIQUE INDEX `WorkflowRun_idempotencyKey_key`(`idempotencyKey`),
     INDEX `WorkflowRun_userId_createdAt_idx`(`userId`, `createdAt`),
+    INDEX `WorkflowRun_organizationId_createdAt_idx`(`organizationId`, `createdAt`),
     INDEX `WorkflowRun_workflowId_status_idx`(`workflowId`, `status`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -679,7 +993,7 @@ CREATE TABLE `CouponRedemption` (
 CREATE TABLE `Notification` (
     `id` VARCHAR(191) NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
-    `type` ENUM('PURCHASE', 'PROMPT_UPDATE', 'CREDIT', 'SUBSCRIPTION', 'SECURITY', 'SYSTEM') NOT NULL,
+    `type` ENUM('PURCHASE', 'PROMPT_UPDATE', 'CREDIT', 'SUBSCRIPTION', 'TASK', 'REPORT', 'RECOMMENDATION', 'SECURITY', 'SYSTEM') NOT NULL,
     `titleAr` VARCHAR(191) NOT NULL,
     `titleEn` VARCHAR(191) NOT NULL,
     `bodyAr` TEXT NOT NULL,
@@ -701,6 +1015,9 @@ CREATE TABLE `NotificationPreference` (
     `creditsEmail` BOOLEAN NOT NULL DEFAULT true,
     `subscriptionsEmail` BOOLEAN NOT NULL DEFAULT true,
     `securityEmail` BOOLEAN NOT NULL DEFAULT true,
+    `taskCompletedEmail` BOOLEAN NOT NULL DEFAULT true,
+    `reportsEmail` BOOLEAN NOT NULL DEFAULT true,
+    `recommendationsEmail` BOOLEAN NOT NULL DEFAULT true,
     `marketingEmail` BOOLEAN NOT NULL DEFAULT false,
     `inAppEnabled` BOOLEAN NOT NULL DEFAULT true,
 
@@ -968,6 +1285,36 @@ CREATE TABLE `RateLimitAttempt` (
 ALTER TABLE `Profile` ADD CONSTRAINT `Profile_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `OrganizationMember` ADD CONSTRAINT `OrganizationMember_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `OrganizationMember` ADD CONSTRAINT `OrganizationMember_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `OrganizationAiEmployee` ADD CONSTRAINT `OrganizationAiEmployee_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `OrganizationAiEmployee` ADD CONSTRAINT `OrganizationAiEmployee_aiEmployeeId_fkey` FOREIGN KEY (`aiEmployeeId`) REFERENCES `AiEmployee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `OrganizationAiEmployee` ADD CONSTRAINT `OrganizationAiEmployee_activatedById_fkey` FOREIGN KEY (`activatedById`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `KnowledgeDocument` ADD CONSTRAINT `KnowledgeDocument_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `KnowledgeDocument` ADD CONSTRAINT `KnowledgeDocument_uploadedById_fkey` FOREIGN KEY (`uploadedById`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `KnowledgeEntry` ADD CONSTRAINT `KnowledgeEntry_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `KnowledgeEntry` ADD CONSTRAINT `KnowledgeEntry_documentId_fkey` FOREIGN KEY (`documentId`) REFERENCES `KnowledgeDocument`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `KnowledgeEntry` ADD CONSTRAINT `KnowledgeEntry_createdById_fkey` FOREIGN KEY (`createdById`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Session` ADD CONSTRAINT `Session_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1010,7 +1357,19 @@ ALTER TABLE `PromptVariable` ADD CONSTRAINT `PromptVariable_promptId_fkey` FOREI
 ALTER TABLE `Subscription` ADD CONSTRAINT `Subscription_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `Subscription` ADD CONSTRAINT `Subscription_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Subscription` ADD CONSTRAINT `Subscription_planId_fkey` FOREIGN KEY (`planId`) REFERENCES `Plan`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `SubscriptionCheckout` ADD CONSTRAINT `SubscriptionCheckout_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `SubscriptionCheckout` ADD CONSTRAINT `SubscriptionCheckout_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `SubscriptionCheckout` ADD CONSTRAINT `SubscriptionCheckout_planId_fkey` FOREIGN KEY (`planId`) REFERENCES `Plan`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Order` ADD CONSTRAINT `Order_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1055,7 +1414,13 @@ ALTER TABLE `CreditTransaction` ADD CONSTRAINT `CreditTransaction_accountId_fkey
 ALTER TABLE `Project` ADD CONSTRAINT `Project_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `Project` ADD CONSTRAINT `Project_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Context` ADD CONSTRAINT `Context_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Context` ADD CONSTRAINT `Context_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Context` ADD CONSTRAINT `Context_projectId_fkey` FOREIGN KEY (`projectId`) REFERENCES `Project`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1065,6 +1430,54 @@ ALTER TABLE `GeneratedPrompt` ADD CONSTRAINT `GeneratedPrompt_userId_fkey` FOREI
 
 -- AddForeignKey
 ALTER TABLE `GeneratedPrompt` ADD CONSTRAINT `GeneratedPrompt_projectId_fkey` FOREIGN KEY (`projectId`) REFERENCES `Project`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `BusinessTask` ADD CONSTRAINT `BusinessTask_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `BusinessTask` ADD CONSTRAINT `BusinessTask_createdById_fkey` FOREIGN KEY (`createdById`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `BusinessTask` ADD CONSTRAINT `BusinessTask_aiEmployeeId_fkey` FOREIGN KEY (`aiEmployeeId`) REFERENCES `AiEmployee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `BusinessTask` ADD CONSTRAINT `BusinessTask_organizationAiEmployeeId_fkey` FOREIGN KEY (`organizationAiEmployeeId`) REFERENCES `OrganizationAiEmployee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `BusinessTask` ADD CONSTRAINT `BusinessTask_projectId_fkey` FOREIGN KEY (`projectId`) REFERENCES `Project`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `BusinessTask` ADD CONSTRAINT `BusinessTask_generatedPromptId_fkey` FOREIGN KEY (`generatedPromptId`) REFERENCES `GeneratedPrompt`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `BusinessTask` ADD CONSTRAINT `BusinessTask_parentTaskId_fkey` FOREIGN KEY (`parentTaskId`) REFERENCES `BusinessTask`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `AiUsageEvent` ADD CONSTRAINT `AiUsageEvent_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `AiUsageEvent` ADD CONSTRAINT `AiUsageEvent_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `AiUsageEvent` ADD CONSTRAINT `AiUsageEvent_aiEmployeeId_fkey` FOREIGN KEY (`aiEmployeeId`) REFERENCES `AiEmployee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `AiUsageEvent` ADD CONSTRAINT `AiUsageEvent_businessTaskId_fkey` FOREIGN KEY (`businessTaskId`) REFERENCES `BusinessTask`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `BusinessRecommendation` ADD CONSTRAINT `BusinessRecommendation_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `BusinessScoreSnapshot` ADD CONSTRAINT `BusinessScoreSnapshot_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `BusinessReport` ADD CONSTRAINT `BusinessReport_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `IndustryPackageEmployee` ADD CONSTRAINT `IndustryPackageEmployee_packageId_fkey` FOREIGN KEY (`packageId`) REFERENCES `IndustryPackage`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `IndustryPackageEmployee` ADD CONSTRAINT `IndustryPackageEmployee_aiEmployeeId_fkey` FOREIGN KEY (`aiEmployeeId`) REFERENCES `AiEmployee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `PromptHistory` ADD CONSTRAINT `PromptHistory_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1101,6 +1514,9 @@ ALTER TABLE `WorkflowRun` ADD CONSTRAINT `WorkflowRun_workflowId_fkey` FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE `WorkflowRun` ADD CONSTRAINT `WorkflowRun_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `WorkflowRun` ADD CONSTRAINT `WorkflowRun_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `Organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `WorkflowRun` ADD CONSTRAINT `WorkflowRun_projectId_fkey` FOREIGN KEY (`projectId`) REFERENCES `Project`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

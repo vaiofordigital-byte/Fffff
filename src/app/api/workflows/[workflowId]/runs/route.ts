@@ -3,9 +3,11 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { apiError, AppError } from "@/lib/http";
+import { requireOrganizationMembership } from "@/lib/organizations";
 import { assertSameOrigin } from "@/lib/security";
 
 const schema = z.object({
+  organizationId: z.string().cuid(),
   projectId: z.string().cuid().optional(),
   context: z.record(z.string(), z.unknown()).default({}),
 });
@@ -24,6 +26,11 @@ export async function POST(
     }
     const input = schema.parse(await request.json());
     const { workflowId } = await params;
+    await requireOrganizationMembership(
+      user.id,
+      input.organizationId,
+      "EMPLOYEE",
+    );
     const existing = await db.workflowRun.findUnique({ where: { idempotencyKey } });
     if (existing) {
       if (existing.userId !== user.id) throw new AppError("IDEMPOTENCY_CONFLICT", 409);
@@ -36,17 +43,55 @@ export async function POST(
     if (!workflow) throw new AppError("WORKFLOW_NOT_FOUND", 404);
     if (input.projectId) {
       const owned = await db.project.count({
-        where: { id: input.projectId, userId: user.id },
+        where: {
+          id: input.projectId,
+          organizationId: input.organizationId,
+        },
       });
       if (!owned) throw new AppError("PROJECT_NOT_FOUND", 404);
     }
+    const [organization, knowledge] = await Promise.all([
+      db.organization.findUnique({
+        where: { id: input.organizationId },
+        select: {
+          name: true,
+          businessType: true,
+          industry: true,
+          country: true,
+          goals: true,
+        },
+      }),
+      db.knowledgeEntry.findMany({
+        where: {
+          organizationId: input.organizationId,
+          approved: true,
+          privateMode: false,
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 40,
+        select: {
+          id: true,
+          kind: true,
+          titleAr: true,
+          titleEn: true,
+          content: true,
+        },
+      }),
+    ]);
 
     const run = await db.workflowRun.create({
       data: {
         workflowId,
         userId: user.id,
+        organizationId: input.organizationId,
         projectId: input.projectId,
-        context: JSON.parse(JSON.stringify(input.context)),
+        context: JSON.parse(
+          JSON.stringify({
+            userInput: input.context,
+            company: organization,
+            approvedKnowledge: knowledge,
+          }),
+        ),
         idempotencyKey,
         status: "PENDING",
         steps: {

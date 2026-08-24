@@ -1,5 +1,7 @@
 import { env } from "@/lib/env";
 import { AppError } from "@/lib/http";
+import { db } from "@/lib/db";
+import { decrypt } from "@/lib/encryption";
 
 export type GenerationRequest = {
   system: string;
@@ -93,11 +95,32 @@ export class ProviderError extends Error {
   }
 }
 
-export function configuredProviders(): AiProvider[] {
+export async function configuredProviders(): Promise<AiProvider[]> {
   const config = env();
   const providers: AiProvider[] = [];
+  const databaseProviders = await db.aiProviderConfiguration.findMany({
+    where: { enabled: true, apiKeyCiphertext: { not: null }, defaultModel: { not: null } },
+    orderBy: [{ isFallback: "asc" }, { createdAt: "asc" }],
+  });
 
-  if (config.AI_API_BASE_URL && config.AI_API_KEY && config.AI_MODEL) {
+  for (const provider of databaseProviders) {
+    if (!provider.apiKeyCiphertext || !provider.defaultModel) continue;
+    providers.push(
+      new OpenAiCompatibleProvider({
+        key: provider.key,
+        baseUrl: provider.baseUrl,
+        apiKey: decrypt(provider.apiKeyCiphertext),
+        model: provider.defaultModel,
+      }),
+    );
+  }
+
+  if (
+    providers.length === 0 &&
+    config.AI_API_BASE_URL &&
+    config.AI_API_KEY &&
+    config.AI_MODEL
+  ) {
     providers.push(
       new OpenAiCompatibleProvider({
         key: config.AI_PROVIDER,

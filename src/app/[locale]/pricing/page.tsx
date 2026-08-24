@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { Check, Sparkles } from "lucide-react";
+import { SubscribeButton } from "@/components/billing/subscribe-button";
+import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isLocale, type Locale } from "@/lib/i18n";
+import { getOrganizationMembership } from "@/lib/organizations";
+import { paymentAdapter } from "@/lib/payments/adapter";
 import { formatMoney } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +21,8 @@ export async function generateMetadata({
     title: locale === "ar" ? "خطط واضحة للنمو" : "Transparent plans",
     description:
       locale === "ar"
-        ? "خطط PROMPTX للأفراد والمحترفين والأعمال والوكالات."
-        : "PROMPTX plans for individuals, professionals, businesses and agencies.",
+        ? "خطط EVELIA للشركات من أول موظف ذكي إلى فريق مؤسسي كامل."
+        : "EVELIA plans from the first AI employee to a complete enterprise workforce.",
   };
 }
 
@@ -30,10 +34,20 @@ export default async function PricingPage({
   const { locale: raw } = await params;
   const locale: Locale = isLocale(raw) ? raw : "ar";
   const ar = locale === "ar";
-  const plans = await db.plan.findMany({
-    where: { active: true },
-    orderBy: { sortOrder: "asc" },
-  });
+  const [plans, user] = await Promise.all([
+    db.plan.findMany({
+      where: { active: true },
+      orderBy: { sortOrder: "asc" },
+    }),
+    getCurrentUser(),
+  ]);
+  const membership = user ? await getOrganizationMembership(user.id) : null;
+  let paymentsAvailable = false;
+  try {
+    paymentsAvailable = paymentAdapter().available;
+  } catch {
+    paymentsAvailable = false;
+  }
 
   return (
     <div className="container-shell py-14 sm:py-20">
@@ -90,10 +104,15 @@ export default async function PricingPage({
                     </li>
                   ))}
                 </ul>
-                <div
-                  className={`mt-auto rounded-xl border px-4 py-3 text-center text-sm font-semibold ${featured ? "border-white/15 text-white/65" : "text-muted"}`}
-                >
-                  {ar ? "يتطلب تهيئة الدفع" : "Payment setup required"}
+                <div className="mt-auto">
+                  <SubscribeButton
+                    locale={locale}
+                    planId={plan.id}
+                    organizationId={membership?.organizationId}
+                    free={Number(plan.monthlyPrice) === 0}
+                    paymentsAvailable={paymentsAvailable}
+                    featured={featured}
+                  />
                 </div>
               </article>
             );

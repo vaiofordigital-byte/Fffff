@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { ArrowDown, Coins, Workflow } from "lucide-react";
 import { StartWorkflowButton } from "@/components/workflows/start-workflow-button";
+import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isLocale, type Locale } from "@/lib/i18n";
+import { getOrganizationMembership } from "@/lib/organizations";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +16,15 @@ export default async function WorkflowDetailPage({
   const { locale: raw, slug } = await params;
   const locale: Locale = isLocale(raw) ? raw : "ar";
   const ar = locale === "ar";
-  const workflow = await db.workflow.findFirst({
-    where: { slug, status: "PUBLISHED" },
-    include: { steps: { orderBy: { sortOrder: "asc" } } },
-  });
+  const [workflow, user] = await Promise.all([
+    db.workflow.findFirst({
+      where: { slug, status: "PUBLISHED" },
+      include: { steps: { orderBy: { sortOrder: "asc" } } },
+    }),
+    getCurrentUser(),
+  ]);
   if (!workflow) notFound();
+  const membership = user ? await getOrganizationMembership(user.id) : null;
 
   return (
     <div className="container-shell py-12 sm:py-16">
@@ -81,7 +87,11 @@ export default async function WorkflowDetailPage({
             </div>
           </dl>
           <div className="my-6 border-t" />
-          <StartWorkflowButton workflowId={workflow.id} locale={locale} />
+          <StartWorkflowButton
+            workflowId={workflow.id}
+            locale={locale}
+            organizationId={membership?.organizationId}
+          />
           <p className="mt-4 text-xs leading-6 text-muted">
             {ar
               ? "لا يُخصم رصيد إلا بعد نجاح كل خطوة. يمكنك مراجعة المخرجات قبل المتابعة."

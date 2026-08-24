@@ -10,9 +10,9 @@ export function SiteFooter({ locale }: { locale: Locale }) {
     {
       title: ar ? "المنتج" : "Product",
       links: [
-        [ar ? "مهندس البرومبت" : "Prompt Architect", "architect"],
-        [ar ? "المُحسِّن" : "Optimizer", "optimizer"],
-        [ar ? "المتجر" : "Marketplace", "marketplace"],
+        [ar ? "موظفو AI" : "AI Employees", "employees"],
+        [ar ? "عقل الشركة" : "Company Brain", "brain"],
+        [ar ? "سير العمل" : "Workflows", "workflows"],
         [ar ? "الأسعار" : "Pricing", "pricing"],
       ],
     },
@@ -20,7 +20,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
       title: ar ? "الموارد" : "Resources",
       links: [
         [ar ? "مركز المعرفة" : "Insights", "blog"],
-        [ar ? "القطاعات" : "Industries", "industries"],
+        [ar ? "حلول القطاعات" : "Industry solutions", "industries"],
         [ar ? "مركز المساعدة" : "Help center", "help"],
         [ar ? "حالة الخدمة" : "Service status", "status"],
       ],
@@ -28,10 +28,10 @@ export function SiteFooter({ locale }: { locale: Locale }) {
     {
       title: ar ? "الشركة" : "Company",
       links: [
-        [ar ? "عن PROMPTX" : "About PROMPTX", "about"],
+        [ar ? "عن EVELIA" : "About EVELIA", "about"],
         [ar ? "الخصوصية" : "Privacy", "privacy"],
         [ar ? "الشروط" : "Terms", "terms"],
-        [ar ? "التراخيص" : "Licenses", "licenses"],
+        [ar ? "سياسة استخدام AI" : "AI usage policy", "licenses"],
       ],
     },
   ];
@@ -44,8 +44,8 @@ export function SiteFooter({ locale }: { locale: Locale }) {
             <Logo locale={locale} className="[&>span:first-of-type]:bg-white [&>span:first-of-type]:text-foreground" />
             <p className="mt-5 max-w-sm text-sm leading-7 text-white/60">
               {ar
-                ? "نظام عربي متكامل لبناء برومبتات احترافية وتحويل المعرفة إلى أصول عمل ذكية."
-                : "An Arabic-first operating system for professional prompts and reusable AI business assets."}
+                ? "نظام تشغيل أعمال عربي أولاً يمنح شركتك موظفين أذكياء يفهمون سياقها ويعملون معها."
+                : "An Arabic-first business operating system that gives every company an AI workforce grounded in its knowledge."}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
@@ -70,11 +70,11 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           </div>
         </div>
         <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-6 text-xs text-white/45">
-          <p>© {new Date().getFullYear()} PROMPTX</p>
+          <p>© {new Date().getFullYear()} EVELIA Intelligence</p>
           <p>
             {ar
-              ? "مؤشر الجودة تقييم بنيوي وليس ضماناً لدقة النتائج."
-              : "Quality scores are structural indicators, not accuracy guarantees."}
+              ? "مؤشر ذكاء الأعمال تقييم إرشادي وليس مقياساً علمياً."
+              : "Business Intelligence Score is a guidance indicator, not a scientific measure."}
           </p>
         </div>
       </div>

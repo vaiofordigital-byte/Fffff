@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronDown, Languages, Menu } from "lucide-react";
+import { Bell, ChevronDown, Languages, Menu } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
@@ -10,9 +10,8 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
   const user = await getCurrentUser();
   const targetLocale = locale === "ar" ? "en" : "ar";
   const links = [
-    { href: `/${locale}/marketplace`, label: dictionary.nav.marketplace },
-    { href: `/${locale}/architect`, label: dictionary.nav.architect },
-    { href: `/${locale}/optimizer`, label: dictionary.nav.optimizer },
+    { href: `/${locale}/employees`, label: dictionary.nav.employees },
+    { href: `/${locale}/industries`, label: dictionary.nav.industries },
     { href: `/${locale}/workflows`, label: dictionary.nav.workflows },
     { href: `/${locale}/pricing`, label: dictionary.nav.pricing },
   ];
@@ -42,12 +41,19 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
             </Link>
           </Button>
           {user ? (
-            <Button asChild size="sm">
-              <Link href={`/${locale}/dashboard`}>
-                {user.profile?.displayName || dictionary.nav.dashboard}
-                <ChevronDown className="size-3.5" aria-hidden="true" />
-              </Link>
-            </Button>
+            <>
+              <Button asChild variant="ghost" size="icon">
+                <Link href={`/${locale}/notifications`} aria-label={locale === "ar" ? "الإشعارات" : "Notifications"}>
+                  <Bell className="size-4" />
+                </Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link href={`/${locale}/dashboard`}>
+                  {user.profile?.displayName || dictionary.nav.dashboard}
+                  <ChevronDown className="size-3.5" aria-hidden="true" />
+                </Link>
+              </Button>
+            </>
           ) : (
             <>
               <Button asChild variant="ghost" size="sm">

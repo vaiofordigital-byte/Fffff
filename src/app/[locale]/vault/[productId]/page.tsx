@@ -1,26 +1,12 @@
-import type { Metadata } from "next";
-import { PremiumPromptViewer } from "@/components/vault/premium-prompt-viewer";
-import { requireUser } from "@/lib/auth";
-import { isLocale, type Locale } from "@/lib/i18n";
+import { redirect } from "next/navigation";
+import { isLocale } from "@/lib/i18n";
 
-export const dynamic = "force-dynamic";
-export const metadata: Metadata = {
-  title: "Protected prompt",
-  robots: { index: false, follow: false, noarchive: true },
-};
-
-export default async function VaultPromptPage({
+export default async function LegacyVaultItemPage({
   params,
 }: {
   params: Promise<{ locale: string; productId: string }>;
 }) {
-  const { locale: raw, productId } = await params;
-  const locale: Locale = isLocale(raw) ? raw : "ar";
-  await requireUser(locale);
-
-  return (
-    <div className="container-shell py-10">
-      <PremiumPromptViewer productId={productId} locale={locale} />
-    </div>
-  );
+  const { locale: raw } = await params;
+  const locale = isLocale(raw) ? raw : "ar";
+  redirect(`/${locale}/brain`);
 }

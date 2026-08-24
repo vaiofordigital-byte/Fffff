@@ -16,16 +16,16 @@ type BuiltInPage = {
 
 const builtIns: Record<string, BuiltInPage> = {
   about: {
-    titleAr: "عن PROMPTX",
-    titleEn: "About PROMPTX",
-    introAr: "نظام تشغيل عربي أولاً لتحويل الأفكار والمعرفة إلى تعليمات AI احترافية قابلة لإعادة الاستخدام.",
-    introEn: "An Arabic-first operating system that turns ideas and knowledge into reusable professional AI instructions.",
+    titleAr: "عن EVELIA",
+    titleEn: "About EVELIA",
+    introAr: "نظام تشغيل أعمال عربي أولاً يمنح الشركات موظفين متخصصين من الذكاء الاصطناعي.",
+    introEn: "An Arabic-first business operating system that gives companies specialized AI employees.",
     sections: [
       {
         headingAr: "المبدأ",
         headingEn: "Our principle",
-        bodyAr: "النتائج الأفضل تبدأ بسياق أوضح وتعليمات أدق، لا بوعود مبالغ فيها عن الذكاء الاصطناعي.",
-        bodyEn: "Better results start with clearer context and precise instructions, not inflated AI promises.",
+        bodyAr: "العمل الأفضل يبدأ بمعرفة شركة معتمدة وأدوار واضحة ونتائج قابلة للمراجعة، لا بوعود مبالغ فيها.",
+        bodyEn: "Better work starts with approved company knowledge, clear roles and reviewable outputs—not inflated AI promises.",
       },
     ],
   },
@@ -38,8 +38,8 @@ const builtIns: Record<string, BuiltInPage> = {
       {
         headingAr: "تقليل البيانات",
         headingEn: "Data minimization",
-        bodyAr: "لا نفهرس البرومبتات الخاصة. يقلل الوضع الخاص التخزين، وتتوفر أدوات الحذف وفق متطلبات الاحتفاظ القانونية والمالية.",
-        bodyEn: "Private prompts are not indexed. Private mode minimizes storage, and deletion controls respect legal and financial retention duties.",
+        bodyAr: "لا نفهرس مهام الشركة أو معرفتها الخاصة. يقلل الوضع الخاص التخزين، وتتوفر أدوات الحذف وفق متطلبات الاحتفاظ القانونية والمالية.",
+        bodyEn: "Private company tasks and knowledge are not indexed. Private mode minimizes storage, and deletion controls respect legal and financial retention duties.",
       },
       {
         headingAr: "التحليلات",
@@ -52,8 +52,8 @@ const builtIns: Record<string, BuiltInPage> = {
   terms: {
     titleAr: "شروط الاستخدام",
     titleEn: "Terms of use",
-    introAr: "استخدم PROMPTX بصورة قانونية ومسؤولة، وراجع مخرجات AI قبل الاعتماد عليها.",
-    introEn: "Use PROMPTX lawfully and responsibly, and review AI outputs before relying on them.",
+    introAr: "استخدم EVELIA بصورة قانونية ومسؤولة، وراجع مخرجات AI قبل الاعتماد عليها.",
+    introEn: "Use EVELIA lawfully and responsibly, and review AI outputs before relying on them.",
     sections: [
       {
         headingAr: "المخرجات",
@@ -64,22 +64,22 @@ const builtIns: Record<string, BuiltInPage> = {
     ],
   },
   licenses: {
-    titleAr: "تراخيص البرومبت",
-    titleEn: "Prompt licenses",
-    introAr: "يعرض كل منتج ترخيصه قبل الشراء. لا تنتقل ملكية الأصل الرسمي إلى المشتري.",
-    introEn: "Every product shows its license before purchase. Ownership of the official asset does not transfer.",
+    titleAr: "سياسة استخدام الذكاء الاصطناعي",
+    titleEn: "AI usage policy",
+    introAr: "تحدد الخطة حدود الموظفين والرصيد والأعضاء، وتبقى مسؤولية مراجعة المخرجات لدى الشركة.",
+    introEn: "Plans define employee, credit and member limits; the company remains responsible for reviewing outputs.",
     sections: [
       {
         headingAr: "شخصي واحترافي",
         headingEn: "Personal and professional",
-        bodyAr: "الشخصي للاستخدام الفردي غير التجاري. الاحترافي يتيح استخدام الأصل في عملك المهني وفق صفحة المنتج.",
-        bodyEn: "Personal covers individual non-commercial use. Professional covers your professional work as defined on the product page.",
+        bodyAr: "يجب ألا تُستخدم المخرجات في التضليل أو انتهاك الخصوصية أو اتخاذ قرارات عالية المخاطر دون مراجعة بشرية مؤهلة.",
+        bodyEn: "Outputs must not be used for deception, privacy violations or high-risk decisions without qualified human review.",
       },
       {
         headingAr: "تجاري ووكالات",
         headingEn: "Commercial and agency",
-        bodyAr: "التجاري للمخرجات المستخدمة في نشاط تجاري، والوكالات للعملاء المتعددين ضمن الحدود المحددة.",
-        bodyEn: "Commercial covers outputs used in business; Agency covers multiple client engagements within stated limits.",
+        bodyAr: "تُدار حدود الاستخدام والموظفين والأعضاء من الخطة المحفوظة في الإدارة، وليست قواعد ثابتة في الواجهة.",
+        bodyEn: "Usage, employee and member limits come from administrator-managed plans, never fixed UI rules.",
       },
     ],
   },
@@ -96,10 +96,10 @@ const builtIns: Record<string, BuiltInPage> = {
         bodyEn: "Only after a successful AI generation. Provider failures and pre-execution moderation blocks are not charged.",
       },
       {
-        headingAr: "أين أجد مشترياتي؟",
-        headingEn: "Where are purchases?",
-        bodyAr: "تظهر في خزنة البرومبت بعد التحقق من إشعار الدفع الموقّع وإنشاء الاستحقاق.",
-        bodyEn: "They appear in Prompt Vault after a signed payment webhook creates the entitlement.",
+        headingAr: "متى تتفعّل خطتي؟",
+        headingEn: "When does my plan activate?",
+        bodyAr: "بعد التحقق من إشعار دفع موقّع من المزود. صفحة النجاح وحدها لا تفعّل الاشتراك.",
+        bodyEn: "After a signed provider webhook is verified. The success page alone never activates a subscription.",
       },
     ],
   },

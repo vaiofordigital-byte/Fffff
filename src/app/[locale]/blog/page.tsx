@@ -17,8 +17,8 @@ export async function generateMetadata({
     title: locale === "ar" ? "مركز المعرفة" : "AI Productivity Insights",
     description:
       locale === "ar"
-        ? "أدلة عربية احترافية لهندسة البرومبت والإنتاجية والأعمال بالذكاء الاصطناعي."
-        : "Professional guides to prompt engineering, AI productivity and business workflows.",
+        ? "أدلة عربية احترافية لتشغيل الأعمال والموظفين الأذكياء والإنتاجية."
+        : "Professional guides to AI business operations, intelligent employees and productivity.",
   };
 }
 
@@ -45,7 +45,7 @@ export default async function BlogPage({
           {ar ? "اعمل بذكاء أكبر مع AI" : "Work more intelligently with AI"}
         </h1>
         <p className="mt-5 text-base leading-8 text-muted">
-          {ar ? "أدلة ثنائية اللغة يراجعها محررون حول هندسة البرومبت والأعمال وسير العمل." : "Editor-reviewed bilingual guides to prompt engineering, business AI and professional workflows."}
+          {ar ? "أدلة ثنائية اللغة يراجعها محررون حول تشغيل الأعمال والموظفين الأذكياء وسير العمل." : "Editor-reviewed bilingual guides to AI business operations, intelligent employees and professional workflows."}
         </p>
       </header>
 

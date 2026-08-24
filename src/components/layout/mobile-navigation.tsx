@@ -1,15 +1,15 @@
 import Link from "next/link";
-import { FlaskConical, LayoutGrid, Library, Store, WandSparkles } from "lucide-react";
+import { Bot, BrainCircuit, ClipboardList, LayoutGrid, LineChart } from "lucide-react";
 import type { Locale } from "@/lib/i18n";
 
 export function MobileNavigation({ locale }: { locale: Locale }) {
   const ar = locale === "ar";
   const items = [
-    { href: `/${locale}/marketplace`, label: ar ? "المتجر" : "Store", icon: Store },
-    { href: `/${locale}/architect`, label: ar ? "إنشاء" : "Create", icon: WandSparkles },
-    { href: `/${locale}/lab`, label: ar ? "المختبر" : "Lab", icon: FlaskConical },
-    { href: `/${locale}/vault`, label: ar ? "المكتبة" : "Vault", icon: Library },
-    { href: `/${locale}/dashboard`, label: ar ? "مساحتي" : "Workspace", icon: LayoutGrid },
+    { href: `/${locale}/dashboard`, label: ar ? "الرئيسية" : "Home", icon: LayoutGrid },
+    { href: `/${locale}/employees`, label: ar ? "الموظفون" : "Employees", icon: Bot },
+    { href: `/${locale}/tasks`, label: ar ? "المهام" : "Tasks", icon: ClipboardList },
+    { href: `/${locale}/brain`, label: ar ? "العقل" : "Brain", icon: BrainCircuit },
+    { href: `/${locale}/reports`, label: ar ? "التقارير" : "Reports", icon: LineChart },
   ];
 
   return (

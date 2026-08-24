@@ -52,7 +52,7 @@ export default async function BlogPostPage({
     datePublished: post.publishedAt?.toISOString(),
     dateModified: post.updatedAt.toISOString(),
     author: { "@type": "Person", name: post.authorName },
-    publisher: { "@type": "Organization", name: "PROMPTX" },
+    publisher: { "@type": "Organization", name: "EVELIA Intelligence" },
     mainEntityOfPage: `${publicEnv.appUrl}/${locale}/blog/${post.slug}`,
   };
 

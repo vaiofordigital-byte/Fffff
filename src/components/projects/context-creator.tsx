@@ -8,9 +8,11 @@ import { Field, Input, Textarea } from "@/components/ui/field";
 
 export function ContextCreator({
   projectId,
+  organizationId,
   locale,
 }: {
   projectId: string;
+  organizationId: string;
   locale: "ar" | "en";
 }) {
   const ar = locale === "ar";
@@ -26,6 +28,7 @@ export function ContextCreator({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        organizationId,
         projectId,
         name: form.get("name"),
         description: form.get("description") || undefined,

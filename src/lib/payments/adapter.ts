@@ -12,17 +12,27 @@ export type CheckoutSessionRequest = {
   successUrl: string;
   cancelUrl: string;
   idempotencyKey: string;
+  mode?: "payment" | "subscription";
+  billingInterval?: "MONTHLY" | "YEARLY";
+  metadata?: Record<string, string>;
 };
 
 export type CheckoutSession = {
   providerPaymentId: string;
+  providerSubscriptionId?: string;
   checkoutUrl: string;
 };
 
 export type VerifiedPaymentEvent = {
   id: string;
-  type: "payment.paid" | "payment.failed" | "payment.refunded";
+  type:
+    | "payment.paid"
+    | "payment.failed"
+    | "payment.refunded"
+    | "subscription.renewed"
+    | "subscription.cancelled";
   providerPaymentId: string;
+  providerSubscriptionId?: string;
   amount?: number;
   currency?: string;
 };
@@ -32,6 +42,10 @@ export interface PaymentAdapter {
   readonly available: boolean;
   createCheckoutSession(request: CheckoutSessionRequest): Promise<CheckoutSession>;
   verifyWebhook(rawBody: string, signature: string): Promise<VerifiedPaymentEvent>;
+  cancelSubscription(
+    providerSubscriptionId: string,
+    idempotencyKey: string,
+  ): Promise<void>;
 }
 
 class DisabledPaymentAdapter implements PaymentAdapter {
@@ -43,6 +57,10 @@ class DisabledPaymentAdapter implements PaymentAdapter {
   }
 
   async verifyWebhook(): Promise<VerifiedPaymentEvent> {
+    throw new AppError("PAYMENTS_NOT_CONFIGURED", 503);
+  }
+
+  async cancelSubscription(): Promise<void> {
     throw new AppError("PAYMENTS_NOT_CONFIGURED", 503);
   }
 }
@@ -90,12 +108,14 @@ class HostedPaymentAdapter implements PaymentAdapter {
     const payload = (await response.json()) as {
       id?: string;
       checkoutUrl?: string;
+      subscriptionId?: string;
     };
     if (!payload.id || !payload.checkoutUrl) {
       throw new AppError("INVALID_PAYMENT_PROVIDER_RESPONSE", 502);
     }
     return {
       providerPaymentId: payload.id,
+      providerSubscriptionId: payload.subscriptionId,
       checkoutUrl: payload.checkoutUrl,
     };
   }
@@ -115,13 +135,39 @@ class HostedPaymentAdapter implements PaymentAdapter {
     if (
       !payload.id ||
       !payload.providerPaymentId ||
-      !["payment.paid", "payment.failed", "payment.refunded"].includes(
+      ![
+        "payment.paid",
+        "payment.failed",
+        "payment.refunded",
+        "subscription.renewed",
+        "subscription.cancelled",
+      ].includes(
         payload.type ?? "",
       )
     ) {
       throw new AppError("INVALID_WEBHOOK_PAYLOAD", 422);
     }
     return payload as VerifiedPaymentEvent;
+  }
+
+  async cancelSubscription(
+    providerSubscriptionId: string,
+    idempotencyKey: string,
+  ) {
+    const response = await fetch(
+      `${this.baseUrl.replace(/\/$/, "")}/subscriptions/${encodeURIComponent(providerSubscriptionId)}/cancel`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+        },
+        body: JSON.stringify({ cancelAtPeriodEnd: true }),
+        signal: AbortSignal.timeout(20_000),
+      },
+    );
+    if (!response.ok) throw new AppError("PAYMENT_PROVIDER_ERROR", 502);
   }
 }
 

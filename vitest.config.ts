@@ -12,7 +12,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary"],
-      include: ["src/lib/prompt-engine.ts", "src/lib/ai/moderation.ts"],
+      include: ["src/lib/output-quality.ts", "src/lib/ai/moderation.ts"],
     },
   },
 });

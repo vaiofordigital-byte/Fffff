@@ -27,13 +27,13 @@ export async function generateMetadata({
     metadataBase: new URL(publicEnv.appUrl),
     title: {
       default: arabic
-        ? "PROMPTX | نظام تشغيل البرومبتات الاحترافية"
-        : "PROMPTX | Professional Prompt Operating System",
-      template: `%s | PROMPTX`,
+        ? "EVELIA | نظام تشغيل الأعمال بالذكاء الاصطناعي"
+        : "EVELIA | AI Operating System for Modern Businesses",
+      template: `%s | EVELIA`,
     },
     description: arabic
-      ? "أنشئ وحسّن ونظّم برومبتات احترافية تحول أفكارك إلى تعليمات ذكية ونتائج أفضل."
-      : "Create, optimize and organize professional prompts that turn ideas into intelligent instructions and better results.",
+      ? "موظفون أذكياء يساعدون شركتك في التسويق والمبيعات وخدمة العملاء وتحليل الأعمال."
+      : "Specialized AI employees help your company with marketing, sales, customer service and business analysis.",
     alternates: {
       canonical: `/${locale}`,
       languages: { ar: "/ar", en: "/en" },
@@ -41,13 +41,13 @@ export async function generateMetadata({
     openGraph: {
       type: "website",
       locale: arabic ? "ar_SA" : "en_US",
-      siteName: "PROMPTX",
+      siteName: "EVELIA Intelligence",
       title: arabic
-        ? "PROMPTX — نتائج احترافية تبدأ بتعليمات أفضل"
-        : "PROMPTX — Professional results start with better instructions",
+        ? "EVELIA — حوّل عملك إلى شركة تعمل بذكاء"
+        : "EVELIA — The AI Operating System for Modern Businesses",
       description: arabic
-        ? "نظام عربي متكامل لإنشاء وتحسين وإدارة البرومبتات."
-        : "An Arabic-first system to create, improve and manage prompts.",
+        ? "نظام عربي أولاً يمنح كل شركة فريقاً من موظفي الذكاء الاصطناعي."
+        : "An Arabic-first operating system that gives every business an intelligent AI workforce.",
     },
     robots: { index: true, follow: true },
   };

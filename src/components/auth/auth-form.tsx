@@ -207,7 +207,7 @@ export function AuthForm({ locale, mode, nextPath, verified }: AuthFormProps) {
       </form>
 
       <p className="mt-6 text-center text-sm text-muted">
-        {register ? (ar ? "لديك حساب؟" : "Already have an account?") : ar ? "ليس لديك حساب؟" : "New to PROMPTX?"}{" "}
+        {register ? (ar ? "لديك حساب؟" : "Already have an account?") : ar ? "ليس لديك حساب؟" : "New to EVELIA?"}{" "}
         <Link href={`/${locale}/${register ? "login" : "register"}`} className="font-semibold text-foreground underline-offset-4 hover:underline">
           {register ? (ar ? "سجّل الدخول" : "Sign in") : ar ? "ابدأ مجاناً" : "Start free"}
         </Link>

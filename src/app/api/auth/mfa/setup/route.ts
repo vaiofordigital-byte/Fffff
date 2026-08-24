@@ -13,7 +13,7 @@ export async function POST() {
     if (!user) throw new AppError("AUTHENTICATION_REQUIRED", 401);
     const secret = new OTPAuth.Secret({ size: 20 });
     const totp = new OTPAuth.TOTP({
-      issuer: "PROMPTX",
+      issuer: "EVELIA",
       label: user.email,
       algorithm: "SHA1",
       digits: 6,

@@ -6,7 +6,13 @@ import { LoaderCircle, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 
-export function ProjectCreator({ locale }: { locale: "ar" | "en" }) {
+export function ProjectCreator({
+  locale,
+  organizationId,
+}: {
+  locale: "ar" | "en";
+  organizationId: string;
+}) {
   const ar = locale === "ar";
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,8 +26,14 @@ export function ProjectCreator({ locale }: { locale: "ar" | "en" }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        organizationId,
         name: form.get("name"),
         description: form.get("description") || undefined,
+        goals: String(form.get("goals") ?? "")
+          .split("\n")
+          .map((goal) => goal.trim())
+          .filter(Boolean),
+        status: "PLANNING",
       }),
     });
     setLoading(false);
@@ -51,6 +63,9 @@ export function ProjectCreator({ locale }: { locale: "ar" | "en" }) {
               </Field>
               <Field label={ar ? "الوصف" : "Description"} htmlFor="project-description">
                 <Textarea id="project-description" name="description" maxLength={1_000} className="min-h-28" />
+              </Field>
+              <Field label={ar ? "الأهداف — هدف في كل سطر" : "Goals — one per line"} htmlFor="project-goals">
+                <Textarea id="project-goals" name="goals" maxLength={2_000} className="min-h-28" />
               </Field>
               <Button type="submit" variant="accent" disabled={loading}>
                 {loading ? <LoaderCircle className="size-4 animate-spin" /> : null}

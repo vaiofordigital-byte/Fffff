@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     if (!secretCiphertext) throw new AppError("MFA_NOT_CONFIGURED", 409);
 
     const totp = new OTPAuth.TOTP({
-      issuer: "PROMPTX",
+      issuer: "EVELIA",
       label: pending?.user.email ?? current?.email ?? "account",
       algorithm: "SHA1",
       digits: 6,
