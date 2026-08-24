@@ -1,0 +1,1101 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Locale {
+  AR
+  EN
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum UserRole {
+  USER
+  SUPPORT_AGENT
+  CONTENT_EDITOR
+  PROMPT_EDITOR
+  ADMINISTRATOR
+  SUPER_ADMIN
+}
+
+enum ProductType {
+  PROMPT
+  BUNDLE
+  WORKFLOW
+  CREDIT_PACK
+  SUBSCRIPTION
+}
+
+enum ProductStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum LicenseType {
+  PERSONAL
+  PROFESSIONAL
+  COMMERCIAL
+  AGENCY
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum CreditTransactionType {
+  SUBSCRIPTION_ALLOCATION
+  PURCHASE
+  USAGE
+  REFUND
+  ADMIN_ADJUSTMENT
+  PROMOTION
+}
+
+enum EntitlementSource {
+  PURCHASE
+  SUBSCRIPTION
+  BUNDLE
+  ADMIN
+}
+
+enum GenerationStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  MODERATED
+}
+
+enum ModerationDecision {
+  ALLOW
+  REVIEW
+  BLOCK
+}
+
+enum CollectionItemType {
+  PROMPT
+  WORKFLOW
+  PROJECT
+  NOTE
+}
+
+enum NotificationType {
+  PURCHASE
+  PROMPT_UPDATE
+  CREDIT
+  SUBSCRIPTION
+  SECURITY
+  SYSTEM
+}
+
+enum WorkflowRunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ContentStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id                     String                   @id @default(cuid())
+  email                  String                   @unique @db.VarChar(191)
+  passwordHash           String?                  @db.VarChar(255)
+  status                 UserStatus               @default(PENDING)
+  role                   UserRole                 @default(USER)
+  preferredLocale        Locale                   @default(AR)
+  emailVerifiedAt        DateTime?
+  mfaEnabled             Boolean                  @default(false)
+  mfaSecretCiphertext    String?                  @db.Text
+  lastLoginAt            DateTime?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  deletedAt              DateTime?
+  profile                Profile?
+  sessions               Session[]
+  emailTokens            EmailVerificationToken[]
+  resetTokens            PasswordResetToken[]
+  orders                 Order[]
+  entitlements           Entitlement[]
+  subscriptions          Subscription[]
+  creditAccount          CreditAccount?
+  projects               Project[]
+  contexts               Context[]
+  generatedPrompts       GeneratedPrompt[]
+  promptHistories        PromptHistory[]
+  favorites              Favorite[]
+  collections            Collection[]
+  reviews                Review[]
+  notifications          Notification[]
+  notificationPreference NotificationPreference?
+  workflowRuns           WorkflowRun[]
+  searchEvents           SearchEvent[]
+  analyticsEvents        AnalyticsEvent[]
+  moderationEvents       ModerationEvent[]
+  couponRedemptions      CouponRedemption[]
+  auditActions           AuditLog[]               @relation("AuditActor")
+  createdPromptVersions  PromptVersion[]          @relation("PromptVersionCreator")
+
+  @@index([status, createdAt])
+}
+
+model Profile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  displayName    String?  @db.VarChar(120)
+  company        String?  @db.VarChar(160)
+  industry       String?  @db.VarChar(120)
+  primaryUse     String?  @db.VarChar(160)
+  experience     String?  @db.VarChar(80)
+  country        String?  @db.VarChar(2)
+  avatarUrl      String?  @db.VarChar(500)
+  onboardingDone Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id            String    @id @default(cuid())
+  userId        String
+  tokenHash     String    @unique @db.Char(64)
+  ipHash        String?   @db.Char(64)
+  userAgent     String?   @db.VarChar(500)
+  mfaVerifiedAt DateTime?
+  expiresAt     DateTime
+  lastSeenAt    DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique @db.Char(64)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique @db.Char(64)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model Category {
+  id               String     @id @default(cuid())
+  parentId         String?
+  slug             String     @unique @db.VarChar(191)
+  nameAr           String     @db.VarChar(160)
+  nameEn           String     @db.VarChar(160)
+  descriptionAr    String?    @db.Text
+  descriptionEn    String?    @db.Text
+  icon             String?    @db.VarChar(80)
+  sortOrder        Int        @default(0)
+  active           Boolean    @default(true)
+  seoTitleAr       String?    @db.VarChar(191)
+  seoTitleEn       String?    @db.VarChar(191)
+  seoDescriptionAr String?    @db.VarChar(320)
+  seoDescriptionEn String?    @db.VarChar(320)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  parent           Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children         Category[] @relation("CategoryTree")
+  products         Product[]
+
+  @@index([parentId, active, sortOrder])
+}
+
+model Tag {
+  id        String        @id @default(cuid())
+  slug      String        @unique @db.VarChar(191)
+  nameAr    String        @db.VarChar(120)
+  nameEn    String        @db.VarChar(120)
+  products  ProductTag[]
+  posts     BlogPostTag[]
+  createdAt DateTime      @default(now())
+}
+
+model Product {
+  id                   String              @id @default(cuid())
+  categoryId           String?
+  type                 ProductType         @default(PROMPT)
+  status               ProductStatus       @default(DRAFT)
+  slug                 String              @unique @db.VarChar(191)
+  titleAr              String              @db.VarChar(191)
+  titleEn              String              @db.VarChar(191)
+  shortDescriptionAr   String              @db.VarChar(500)
+  shortDescriptionEn   String              @db.VarChar(500)
+  descriptionAr        String              @db.LongText
+  descriptionEn        String              @db.LongText
+  previewAr            String?             @db.LongText
+  previewEn            String?             @db.LongText
+  industry             String?             @db.VarChar(120)
+  difficulty           DifficultyLevel     @default(INTERMEDIATE)
+  price                Decimal             @default(0) @db.Decimal(12, 2)
+  salePrice            Decimal?            @db.Decimal(12, 2)
+  currency             String              @default("SAR") @db.Char(3)
+  subscriptionEligible Boolean             @default(false)
+  licenseType          LicenseType         @default(PERSONAL)
+  featured             Boolean             @default(false)
+  popularityScore      Int                 @default(0)
+  purchaseCount        Int                 @default(0)
+  ratingAverage        Decimal             @default(0) @db.Decimal(3, 2)
+  ratingCount          Int                 @default(0)
+  seoTitleAr           String?             @db.VarChar(191)
+  seoTitleEn           String?             @db.VarChar(191)
+  seoDescriptionAr     String?             @db.VarChar(320)
+  seoDescriptionEn     String?             @db.VarChar(320)
+  structuredData       Json?
+  publishedAt          DateTime?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  category             Category?           @relation(fields: [categoryId], references: [id])
+  prompt               Prompt?
+  tags                 ProductTag[]
+  orderItems           OrderItem[]
+  entitlements         Entitlement[]
+  reviews              Review[]
+  favorites            Favorite[]
+  bundleItems          ProductBundleItem[] @relation("Bundle")
+  includedInBundles    ProductBundleItem[] @relation("BundleComponent")
+
+  @@index([status, type, publishedAt])
+  @@index([categoryId, status])
+  @@index([featured, status])
+  @@index([industry, status])
+}
+
+model ProductTag {
+  productId String
+  tagId     String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([productId, tagId])
+  @@index([tagId])
+}
+
+model ProductBundleItem {
+  bundleId  String
+  productId String
+  sortOrder Int     @default(0)
+  bundle    Product @relation("Bundle", fields: [bundleId], references: [id], onDelete: Cascade)
+  product   Product @relation("BundleComponent", fields: [productId], references: [id], onDelete: Restrict)
+
+  @@id([bundleId, productId])
+  @@index([productId])
+}
+
+model Prompt {
+  id              String           @id @default(cuid())
+  productId       String           @unique
+  compatibility   Json
+  languages       Json
+  instructionsAr  String?          @db.LongText
+  instructionsEn  String?          @db.LongText
+  expectedOutputs Json?
+  scoreWeights    Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  product         Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  versions        PromptVersion[]
+  variables       PromptVariable[]
+  histories       PromptHistory[]
+  workflowSteps   WorkflowStep[]
+}
+
+model PromptVersion {
+  id             String        @id @default(cuid())
+  promptId       String
+  createdById    String?
+  version        String        @db.VarChar(24)
+  premiumContent String        @db.LongText
+  previewContent String?       @db.LongText
+  changelogAr    String?       @db.Text
+  changelogEn    String?       @db.Text
+  structure      Json?
+  qualityScore   Int?
+  isCurrent      Boolean       @default(false)
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  prompt         Prompt        @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  createdBy      User?         @relation("PromptVersionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  entitlements   Entitlement[]
+
+  @@unique([promptId, version])
+  @@index([promptId, isCurrent])
+}
+
+model PromptVariable {
+  id            String  @id @default(cuid())
+  promptId      String
+  key           String  @db.VarChar(80)
+  labelAr       String  @db.VarChar(160)
+  labelEn       String  @db.VarChar(160)
+  descriptionAr String? @db.VarChar(500)
+  descriptionEn String? @db.VarChar(500)
+  inputType     String  @default("text") @db.VarChar(40)
+  required      Boolean @default(true)
+  defaultValue  String? @db.Text
+  options       Json?
+  sortOrder     Int     @default(0)
+  prompt        Prompt  @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@unique([promptId, key])
+  @@index([promptId, sortOrder])
+}
+
+model Plan {
+  id             String         @id @default(cuid())
+  slug           String         @unique @db.VarChar(80)
+  nameAr         String         @db.VarChar(120)
+  nameEn         String         @db.VarChar(120)
+  descriptionAr  String?        @db.Text
+  descriptionEn  String?        @db.Text
+  monthlyPrice   Decimal        @db.Decimal(12, 2)
+  yearlyPrice    Decimal        @db.Decimal(12, 2)
+  currency       String         @default("SAR") @db.Char(3)
+  monthlyCredits Int            @default(0)
+  limits         Json
+  features       Json
+  active         Boolean        @default(true)
+  sortOrder      Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  subscriptions  Subscription[]
+
+  @@index([active, sortOrder])
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String
+  planId                 String
+  provider               String?            @db.VarChar(80)
+  providerSubscriptionId String?            @unique @db.VarChar(191)
+  status                 SubscriptionStatus @default(TRIALING)
+  interval               BillingInterval
+  currentPeriodStart     DateTime
+  currentPeriodEnd       DateTime
+  cancelAtPeriodEnd      Boolean            @default(false)
+  cancelledAt            DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  plan                   Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+  entitlements           Entitlement[]
+
+  @@index([userId, status])
+  @@index([status, currentPeriodEnd])
+}
+
+model Order {
+  id                String             @id @default(cuid())
+  userId            String
+  number            String             @unique @db.VarChar(40)
+  idempotencyKey    String             @unique @db.VarChar(191)
+  status            OrderStatus        @default(PENDING)
+  currency          String             @db.Char(3)
+  subtotal          Decimal            @db.Decimal(12, 2)
+  discount          Decimal            @default(0) @db.Decimal(12, 2)
+  tax               Decimal            @default(0) @db.Decimal(12, 2)
+  total             Decimal            @db.Decimal(12, 2)
+  couponCode        String?            @db.VarChar(80)
+  billingDetails    Json?
+  paidAt            DateTime?
+  refundedAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  user              User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  items             OrderItem[]
+  payments          Payment[]
+  entitlements      Entitlement[]
+  couponRedemptions CouponRedemption[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  id            String       @id @default(cuid())
+  orderId       String
+  productId     String
+  titleSnapshot String       @db.VarChar(191)
+  unitPrice     Decimal      @db.Decimal(12, 2)
+  quantity      Int          @default(1)
+  tax           Decimal      @default(0) @db.Decimal(12, 2)
+  total         Decimal      @db.Decimal(12, 2)
+  licenseType   LicenseType
+  metadata      Json?
+  order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  entitlement   Entitlement?
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Payment {
+  id                String         @id @default(cuid())
+  orderId           String
+  provider          String         @db.VarChar(80)
+  providerPaymentId String?        @unique @db.VarChar(191)
+  idempotencyKey    String         @unique @db.VarChar(191)
+  status            PaymentStatus  @default(PENDING)
+  amount            Decimal        @db.Decimal(12, 2)
+  currency          String         @db.Char(3)
+  failureCode       String?        @db.VarChar(120)
+  failureMessage    String?        @db.VarChar(500)
+  refundedAmount    Decimal        @default(0) @db.Decimal(12, 2)
+  metadata          Json?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  order             Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  events            PaymentEvent[]
+
+  @@index([orderId, status])
+}
+
+model PaymentEvent {
+  id              String    @id @default(cuid())
+  paymentId       String?
+  provider        String    @db.VarChar(80)
+  providerEventId String    @db.VarChar(191)
+  type            String    @db.VarChar(120)
+  payloadHash     String    @db.Char(64)
+  processedAt     DateTime?
+  failedAt        DateTime?
+  errorCode       String?   @db.VarChar(120)
+  createdAt       DateTime  @default(now())
+  payment         Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, providerEventId])
+  @@index([processedAt, createdAt])
+}
+
+model Entitlement {
+  id              String            @id @default(cuid())
+  userId          String
+  productId       String
+  orderId         String?
+  orderItemId     String?           @unique
+  subscriptionId  String?
+  promptVersionId String?
+  source          EntitlementSource
+  licenseType     LicenseType
+  startsAt        DateTime          @default(now())
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime          @default(now())
+  user            User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+  product         Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  order           Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderItem       OrderItem?        @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+  subscription    Subscription?     @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  promptVersion   PromptVersion?    @relation(fields: [promptVersionId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, productId, source, orderId])
+  @@index([userId, productId, expiresAt])
+}
+
+model CreditAccount {
+  id           String              @id @default(cuid())
+  userId       String              @unique
+  balance      Int                 @default(0)
+  lifetimeIn   Int                 @default(0)
+  lifetimeOut  Int                 @default(0)
+  updatedAt    DateTime            @updatedAt
+  createdAt    DateTime            @default(now())
+  user         User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  transactions CreditTransaction[]
+}
+
+model CreditTransaction {
+  id             String                @id @default(cuid())
+  accountId      String
+  type           CreditTransactionType
+  amount         Int
+  balanceAfter   Int
+  reason         String                @db.VarChar(500)
+  relatedType    String?               @db.VarChar(80)
+  relatedId      String?               @db.VarChar(191)
+  idempotencyKey String                @unique @db.VarChar(191)
+  metadata       Json?
+  createdAt      DateTime              @default(now())
+  account        CreditAccount         @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([accountId, createdAt])
+  @@index([relatedType, relatedId])
+}
+
+model Project {
+  id               String            @id @default(cuid())
+  userId           String
+  name             String            @db.VarChar(191)
+  description      String?           @db.Text
+  color            String?           @db.VarChar(20)
+  archived         Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contexts         Context[]
+  generatedPrompts GeneratedPrompt[]
+  workflowRuns     WorkflowRun[]
+
+  @@index([userId, archived, updatedAt])
+}
+
+model Context {
+  id          String   @id @default(cuid())
+  userId      String
+  projectId   String?
+  name        String   @db.VarChar(191)
+  description String?  @db.Text
+  data        Json
+  approved    Boolean  @default(true)
+  privateMode Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([projectId])
+}
+
+model GeneratedPrompt {
+  id             String            @id @default(cuid())
+  userId         String
+  projectId      String?
+  title          String            @db.VarChar(191)
+  intent         String            @db.Text
+  input          Json
+  content        String?           @db.LongText
+  locale         Locale
+  mode           String            @db.VarChar(60)
+  provider       String?           @db.VarChar(80)
+  model          String?           @db.VarChar(120)
+  status         GenerationStatus  @default(PENDING)
+  qualityScore   Int?
+  creditCost     Int               @default(0)
+  privateMode    Boolean           @default(false)
+  idempotencyKey String            @unique @db.VarChar(191)
+  errorCode      String?           @db.VarChar(120)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project        Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  histories      PromptHistory[]
+  workflowSteps  WorkflowStepRun[]
+
+  @@index([userId, status, createdAt])
+  @@index([projectId, updatedAt])
+}
+
+model PromptHistory {
+  id                String           @id @default(cuid())
+  userId            String
+  promptId          String?
+  generatedPromptId String?
+  parentId          String?
+  title             String           @db.VarChar(191)
+  content           String           @db.LongText
+  version           Int
+  source            String           @db.VarChar(40)
+  createdAt         DateTime         @default(now())
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt            Prompt?          @relation(fields: [promptId], references: [id], onDelete: SetNull)
+  generatedPrompt   GeneratedPrompt? @relation(fields: [generatedPromptId], references: [id], onDelete: Cascade)
+  parent            PromptHistory?   @relation("PersonalRevisionTree", fields: [parentId], references: [id], onDelete: SetNull)
+  revisions         PromptHistory[]  @relation("PersonalRevisionTree")
+
+  @@unique([userId, generatedPromptId, version])
+  @@index([userId, createdAt])
+}
+
+model Favorite {
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productId])
+  @@index([productId])
+}
+
+model Collection {
+  id          String           @id @default(cuid())
+  userId      String
+  name        String           @db.VarChar(191)
+  description String?          @db.Text
+  color       String?          @db.VarChar(20)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       CollectionItem[]
+
+  @@index([userId, updatedAt])
+}
+
+model CollectionItem {
+  id           String             @id @default(cuid())
+  collectionId String
+  itemType     CollectionItemType
+  itemId       String
+  note         String?            @db.Text
+  sortOrder    Int                @default(0)
+  createdAt    DateTime           @default(now())
+  collection   Collection         @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, itemType, itemId])
+  @@index([collectionId, sortOrder])
+}
+
+model Workflow {
+  id             String         @id @default(cuid())
+  slug           String         @unique @db.VarChar(191)
+  nameAr         String         @db.VarChar(191)
+  nameEn         String         @db.VarChar(191)
+  descriptionAr  String         @db.Text
+  descriptionEn  String         @db.Text
+  industry       String?        @db.VarChar(120)
+  status         ProductStatus  @default(DRAFT)
+  creditEstimate Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  steps          WorkflowStep[]
+  runs           WorkflowRun[]
+
+  @@index([status, industry])
+}
+
+model WorkflowStep {
+  id           String            @id @default(cuid())
+  workflowId   String
+  promptId     String?
+  nameAr       String            @db.VarChar(191)
+  nameEn       String            @db.VarChar(191)
+  instructions Json
+  inputMapping Json?
+  outputKey    String            @db.VarChar(80)
+  creditCost   Int               @default(1)
+  sortOrder    Int
+  workflow     Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  prompt       Prompt?           @relation(fields: [promptId], references: [id], onDelete: SetNull)
+  runs         WorkflowStepRun[]
+
+  @@unique([workflowId, sortOrder])
+}
+
+model WorkflowRun {
+  id             String            @id @default(cuid())
+  workflowId     String
+  userId         String
+  projectId      String?
+  status         WorkflowRunStatus @default(PENDING)
+  currentStep    Int               @default(0)
+  context        Json
+  idempotencyKey String            @unique @db.VarChar(191)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  workflow       Workflow          @relation(fields: [workflowId], references: [id], onDelete: Restrict)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+  project        Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  steps          WorkflowStepRun[]
+
+  @@index([userId, createdAt])
+  @@index([workflowId, status])
+}
+
+model WorkflowStepRun {
+  id                String            @id @default(cuid())
+  workflowRunId     String
+  workflowStepId    String
+  generatedPromptId String?
+  status            WorkflowRunStatus @default(PENDING)
+  input             Json?
+  output            Json?
+  creditCost        Int               @default(0)
+  startedAt         DateTime?
+  completedAt       DateTime?
+  workflowRun       WorkflowRun       @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+  workflowStep      WorkflowStep      @relation(fields: [workflowStepId], references: [id], onDelete: Restrict)
+  generatedPrompt   GeneratedPrompt?  @relation(fields: [generatedPromptId], references: [id], onDelete: SetNull)
+
+  @@unique([workflowRunId, workflowStepId])
+}
+
+model Review {
+  id          String        @id @default(cuid())
+  userId      String
+  productId   String
+  rating      Int
+  comment     String?       @db.Text
+  verified    Boolean       @default(false)
+  status      ContentStatus @default(REVIEW)
+  moderatedBy String?       @db.VarChar(191)
+  moderatedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product     Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([productId, status, createdAt])
+}
+
+model Coupon {
+  id            String             @id @default(cuid())
+  code          String             @unique @db.VarChar(80)
+  type          String             @db.VarChar(40)
+  value         Decimal            @db.Decimal(12, 2)
+  currency      String?            @db.Char(3)
+  maxUses       Int?
+  uses          Int                @default(0)
+  minOrderValue Decimal?           @db.Decimal(12, 2)
+  startsAt      DateTime
+  expiresAt     DateTime?
+  active        Boolean            @default(true)
+  rules         Json?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  redemptions   CouponRedemption[]
+
+  @@index([active, startsAt, expiresAt])
+}
+
+model CouponRedemption {
+  id        String   @id @default(cuid())
+  couponId  String
+  userId    String
+  orderId   String
+  amount    Decimal  @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([couponId, orderId])
+  @@index([userId, createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  titleAr   String           @db.VarChar(191)
+  titleEn   String           @db.VarChar(191)
+  bodyAr    String           @db.Text
+  bodyEn    String           @db.Text
+  actionUrl String?          @db.VarChar(500)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+}
+
+model NotificationPreference {
+  id                 String  @id @default(cuid())
+  userId             String  @unique
+  purchasesEmail     Boolean @default(true)
+  promptUpdatesEmail Boolean @default(true)
+  creditsEmail       Boolean @default(true)
+  subscriptionsEmail Boolean @default(true)
+  securityEmail      Boolean @default(true)
+  marketingEmail     Boolean @default(false)
+  inAppEnabled       Boolean @default(true)
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String   @db.VarChar(120)
+  entityType String?  @db.VarChar(80)
+  entityId   String?  @db.VarChar(191)
+  changes    Json?
+  ipHash     String?  @db.Char(64)
+  userAgent  String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId, createdAt])
+}
+
+model ModerationEvent {
+  id                String             @id @default(cuid())
+  userId            String?
+  generationId      String?            @db.VarChar(191)
+  inputHash         String             @db.Char(64)
+  categories        Json
+  decision          ModerationDecision
+  providerReference String?            @db.VarChar(191)
+  createdAt         DateTime           @default(now())
+  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([decision, createdAt])
+}
+
+model Setting {
+  id          String   @id @default(cuid())
+  key         String   @unique @db.VarChar(191)
+  value       Json
+  public      Boolean  @default(false)
+  description String?  @db.VarChar(500)
+  updatedBy   String?  @db.VarChar(191)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique @db.VarChar(120)
+  description String?  @db.VarChar(500)
+  enabled     Boolean  @default(false)
+  rollout     Int      @default(0)
+  audiences   Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AiProviderConfiguration {
+  id               String   @id @default(cuid())
+  key              String   @unique @db.VarChar(80)
+  displayName      String   @db.VarChar(120)
+  baseUrl          String   @db.VarChar(500)
+  apiKeyCiphertext String?  @db.Text
+  defaultModel     String?  @db.VarChar(120)
+  enabled          Boolean  @default(false)
+  isFallback       Boolean  @default(false)
+  limits           Json?
+  pricing          Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model CmsPage {
+  id          String        @id @default(cuid())
+  slug        String        @unique @db.VarChar(191)
+  titleAr     String        @db.VarChar(191)
+  titleEn     String        @db.VarChar(191)
+  contentAr   Json
+  contentEn   Json
+  seo         Json?
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ArticleCategory {
+  id            String     @id @default(cuid())
+  slug          String     @unique @db.VarChar(191)
+  nameAr        String     @db.VarChar(160)
+  nameEn        String     @db.VarChar(160)
+  descriptionAr String?    @db.Text
+  descriptionEn String?    @db.Text
+  posts         BlogPost[]
+}
+
+model BlogPost {
+  id          String           @id @default(cuid())
+  categoryId  String?
+  slug        String           @unique @db.VarChar(191)
+  titleAr     String           @db.VarChar(191)
+  titleEn     String           @db.VarChar(191)
+  excerptAr   String           @db.VarChar(500)
+  excerptEn   String           @db.VarChar(500)
+  contentAr   String           @db.LongText
+  contentEn   String           @db.LongText
+  authorName  String           @db.VarChar(120)
+  coverImage  String?          @db.VarChar(500)
+  seo         Json?
+  status      ContentStatus    @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  category    ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags        BlogPostTag[]
+
+  @@index([status, publishedAt])
+}
+
+model BlogPostTag {
+  postId String
+  tagId  String
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+model Faq {
+  id         String        @id @default(cuid())
+  questionAr String        @db.VarChar(500)
+  questionEn String        @db.VarChar(500)
+  answerAr   String        @db.Text
+  answerEn   String        @db.Text
+  category   String?       @db.VarChar(120)
+  sortOrder  Int           @default(0)
+  status     ContentStatus @default(DRAFT)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model NavigationItem {
+  id        String           @id @default(cuid())
+  parentId  String?
+  location  String           @db.VarChar(80)
+  labelAr   String           @db.VarChar(120)
+  labelEn   String           @db.VarChar(120)
+  href      String           @db.VarChar(500)
+  sortOrder Int              @default(0)
+  active    Boolean          @default(true)
+  parent    NavigationItem?  @relation("NavigationTree", fields: [parentId], references: [id])
+  children  NavigationItem[] @relation("NavigationTree")
+
+  @@index([location, active, sortOrder])
+}
+
+model SearchEvent {
+  id              String   @id @default(cuid())
+  userId          String?
+  queryHash       String   @db.Char(64)
+  normalizedQuery String?  @db.VarChar(500)
+  locale          Locale
+  resultCount     Int
+  filters         Json?
+  createdAt       DateTime @default(now())
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([resultCount, createdAt])
+  @@index([queryHash, createdAt])
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  userId     String?
+  sessionKey String?  @db.Char(64)
+  name       String   @db.VarChar(120)
+  entityType String?  @db.VarChar(80)
+  entityId   String?  @db.VarChar(191)
+  properties Json?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([name, createdAt])
+  @@index([entityType, entityId, createdAt])
+}
+
+model EmailOutbox {
+  id             String    @id @default(cuid())
+  recipient      String    @db.VarChar(191)
+  template       String    @db.VarChar(80)
+  locale         Locale
+  payload        Json
+  idempotencyKey String    @unique @db.VarChar(191)
+  attempts       Int       @default(0)
+  sentAt         DateTime?
+  failedAt       DateTime?
+  lastErrorCode  String?   @db.VarChar(120)
+  createdAt      DateTime  @default(now())
+
+  @@index([sentAt, failedAt, createdAt])
+}
+
+model IdempotencyRecord {
+  id           String    @id @default(cuid())
+  scope        String    @db.VarChar(80)
+  key          String    @db.VarChar(191)
+  requestHash  String    @db.Char(64)
+  responseCode Int?
+  responseBody Json?
+  lockedUntil  DateTime?
+  completedAt  DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+
+  @@unique([scope, key])
+  @@index([expiresAt])
+}
+
+model RateLimitAttempt {
+  id         String   @id @default(cuid())
+  keyHash    String   @db.Char(64)
+  action     String   @db.VarChar(80)
+  occurredAt DateTime @default(now())
+
+  @@index([keyHash, action, occurredAt])
+}
