@@ -37,10 +37,10 @@ Maintain isolated development, staging and production environments. Each environ
 
 1. Run lint, type checking, tests and a production build.
 2. Back up the production database and configuration.
-3. Deploy to staging and run account, marketplace, AI and payment smoke tests.
+3. Deploy to staging and run account, organization isolation, Company Brain, AI task and payment smoke tests.
 4. Apply migrations with `npm run db:deploy`.
 5. Deploy the immutable build artifact to production.
-6. Confirm health and error reporting without logging private prompt content.
+6. Confirm health and error reporting without logging private business tasks or Company Brain content.
 
 ## Environment requirements
 

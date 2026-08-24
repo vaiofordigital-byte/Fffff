@@ -1,58 +1,87 @@
-# PROMPTX architecture
+# EVELIA Intelligence architecture
 
-## Application boundaries
+## Deployment shape
 
-PROMPTX is a modular monolith designed for Hostinger-compatible Node.js hosting. It avoids infrastructure that requires unsupported managed queues or microservices.
+EVELIA is a Hostinger-compatible modular monolith: Next.js server rendering and secure route handlers run in one Node.js application, with MySQL/MariaDB as the durable store. It requires no Kubernetes, microservices or permanent background workers.
 
-- `src/app`: localized pages, protected workspaces, admin surfaces and route handlers.
-- `src/components`: reusable design-system and domain components.
-- `src/lib/auth.ts`, `security.ts`, `encryption.ts`: identity and security controls.
-- `src/lib/prompt-engine.ts`: deterministic prompt architecture, optimization and structural scoring.
-- `src/lib/ai`: provider abstraction, moderation and generation/credit pipeline.
-- `src/lib/payments`: payment adapter, server-priced checkout and webhook processing.
-- `src/lib/entitlements.ts`: the only premium-content read path.
-- `prisma/schema.prisma`: normalized commerce, SaaS, content and AI domain model.
+## Core boundaries
 
-## Protected prompt flow
+- `src/app/[locale]`: Arabic RTL and English LTR public, workspace, billing and administration surfaces.
+- `src/lib/organizations.ts`: organization membership and role enforcement.
+- `src/lib/business-tasks.ts`: employee selection, approved knowledge grounding, AI execution and usage recording.
+- `src/lib/business-intelligence.ts`: evidence-based recommendations and explainable Business Intelligence Score.
+- `src/lib/document-intelligence.ts`: bounded PDF, DOCX and text extraction.
+- `src/lib/ai`: provider abstraction, moderation and atomic credit pipeline.
+- `src/lib/payments`: hosted checkout adapter, signed webhook verification and subscription lifecycle.
+- `prisma/schema.prisma`: normalized identity, organization, knowledge, task, report, usage, billing, CMS and audit domains.
 
-1. Public product pages select preview and version metadata only.
-2. The Vault page lists an entitlement's product metadata without selecting premium content.
-3. The authenticated browser requests `/api/products/:productId/content`.
-4. The server validates session, product status, direct/bundle/subscription entitlement and expiry.
-5. Only then does the server select and return the current published prompt version with `private, no-store` caching.
+## Organization isolation
 
-Personal customization happens in the browser and never mutates the official version. Server-side personal revision entities are available for durable history.
+Every private business entity carries an `organizationId`: memberships, employee activations, Company Brain knowledge, documents, projects, tasks, usage, recommendations, reports, subscriptions and workflow runs.
 
-## AI generation flow
+Private APIs:
 
-1. Validate same-origin request and typed input.
-2. Normalize and moderate input on the server.
-3. Create an idempotent generation record.
-4. Check current credit balance without charging.
-5. Call the configured provider, then a configured fallback when appropriate.
-6. Run structural output evaluation.
-7. Atomically decrement balance, append a ledger transaction and mark the generation complete.
-8. On provider failure, mark the generation failed and leave the ledger untouched.
+1. authenticate the opaque HttpOnly session;
+2. load an active membership for the exact organization;
+3. enforce Owner, Manager, Employee or Viewer minimum role;
+4. scope every query by `organizationId`;
+5. return private no-store responses.
 
-Private mode stores only an input hash and operational metadata. The returned output is not persisted.
+Suspended and deleted organizations fail the shared membership check. Internal provider instructions and API keys are never selected into user-facing responses.
 
-## Commerce flow
+## AI employee execution
 
-Checkout ignores client prices. It reloads published products, currency, sale price and configured tax from MySQL. An idempotency key uniquely identifies both the order and payment initiation.
+1. Validate same-origin, typed input and idempotency key.
+2. Verify organization membership and active employee activation.
+3. Enforce plan/employee limits and check the ledger balance.
+4. Load only approved, automatic-use Company Brain entries from the same organization.
+5. Put internal employee instructions and company context in the provider system channel; persist only the user's public instruction.
+6. Normalize and moderate input.
+7. Execute the configured provider, then an enabled fallback if required.
+8. Evaluate output structure.
+9. Atomically deduct credits, append a ledger transaction, save the task and append an organization usage event.
+10. On failure, record the failure without charging credits.
 
-The payment success URL does not grant access. The adapter verifies the raw webhook signature, event identity, amount and currency. A transaction updates payment/order status and creates unique entitlements. Duplicate events return the prior result.
+Private mode stores task/input hashes and operational metadata but not task text or output.
 
-## Authorization
+## Company Brain
 
-Roles form an increasing permission hierarchy:
+Manual entries and extracted documents are organization-scoped and approval-aware. PDF, DOCX, TXT and Markdown extraction is bounded to 10 MB and 250,000 normalized characters. Files are not placed under the public web root. `vectorReference` and `embeddingMetadata` support a future semantic index without requiring unsupported infrastructure now.
 
-`USER < SUPPORT_AGENT < CONTENT_EDITOR < PROMPT_EDITOR < ADMINISTRATOR < SUPER_ADMIN`
+Entries marked manual-only remain visible to authorized members but are excluded from automatic employee context.
 
-Ownership checks are applied to projects, contexts, workflows, generated prompts and Vault assets. Administrative routes require a verified MFA session; administrators without TOTP enrollment are redirected to security setup.
+## Business intelligence
 
-## Extensibility
+Recommendations are emitted only when real evidence exists, such as product knowledge without customer knowledge or an active support employee without FAQ data.
 
-- Additional AI vendors implement `AiProvider`.
-- Additional payment gateways implement `PaymentAdapter`.
-- Plans, prices, limits, categories, feature flags, CMS pages and AI configuration are stored in the database.
-- Team, enterprise, API and mobile clients can reuse the existing entitlement, project, workflow and ledger boundaries.
+Business Intelligence Score has five explainable 0–20 dimensions:
+
+- AI employee adoption
+- process organization
+- customer service readiness
+- content consistency
+- company knowledge completeness
+
+It is explicitly described as a guidance indicator, not a scientific measure.
+
+## Billing
+
+Plans, prices, limits and employee allowances live in MySQL. Paid checkout:
+
+1. validates plan and organization ownership on the server;
+2. creates an idempotent subscription checkout;
+3. redirects to a configured real payment provider;
+4. waits for a signed webhook;
+5. validates amount and currency;
+6. activates, renews or cancels the subscription;
+7. allocates credits through the ledger exactly once.
+
+Success pages never activate subscriptions.
+
+## Administration
+
+Administrative routes require both role authorization and enrolled TOTP. The control center manages organization status, credit adjustments, AI employee availability/cost, encrypted provider credentials, CMS content and security audit records. Secret values and internal employee instructions are omitted from audit changes.
+
+## Future expansion
+
+The organization, employee, task and provider boundaries are ready for WhatsApp, CRM, Shopify, WooCommerce, mobile apps, API clients and enterprise identity without changing core data ownership.

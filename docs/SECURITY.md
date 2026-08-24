@@ -13,10 +13,10 @@
 ## Authorization and data
 
 - [x] Role hierarchy and server-side administrative checks.
-- [x] Ownership checks for projects, context and workflow runs.
-- [x] Premium content omitted from public queries and returned only after entitlement checks.
-- [x] Private generation content is not persisted or indexed.
-- [x] Admin audit logs omit passwords, API keys and premium content.
+- [x] Organization membership and ownership checks for knowledge, documents, tasks, projects, reports, usage and workflow runs.
+- [x] Company Brain content is omitted from public queries and loaded only after organization authorization.
+- [x] Private task instructions and outputs are not persisted or indexed.
+- [x] Admin audit logs omit passwords, provider keys, internal employee instructions and private business content.
 - [x] Prisma parameterized queries prevent SQL injection.
 
 ## Request security
@@ -33,6 +33,7 @@
 
 - [x] No client-side provider, payment or SMTP secrets.
 - [x] AES-256-GCM encryption for TOTP secrets.
+- [x] AES-256-GCM encryption for database-managed AI provider keys.
 - [x] Environment template contains placeholders only.
 - [ ] Rotate production webhook, encryption, SMTP and provider secrets under an incident-response policy.
 
